@@ -26,7 +26,7 @@ ld (ix+92),%10000000
 ; The second 9 bytes define the same for a dead cell.
 #define RULES 63200
 ld hl,RULES
-;ld (hl),1
+ld (hl),1
 ld	bc,9
 add	hl,bc
 ld (hl),1
@@ -43,13 +43,13 @@ di
 ; This part sets up the program for running the simulation
 RUN_STARTUP:
 
-	; Set b to 9 so we can count bits
+	; Set b, the byte counter, to 9 so we can count bits
 	ld		b,9
 
-	; Set c to 96 so we can count columns and rows
+	; Set c, the column counter, to 96 so we can count columns and rows
 	ld 		c,96
 
-	; Set e to 0 so we can accumulate the next byte of the new world
+	; Set e, the column accumulator, to 0 so we can accumulate the next byte of the new world
 	ld 		e,0
 
 	; Swap the registers
@@ -60,7 +60,8 @@ RUN_STARTUP:
 	ld		d,(ix + 0)
 	ld		h,(ix + 4)
 
-	; Zero the accumulating registers
+	; Zero the back, centre and front accumulators.
+	; These accumulate neighbors, creating the centre, front and back bits.
 	ld		c,0
 	ld		e,0
 	ld		l,0
@@ -89,7 +90,7 @@ ACCUM:
 		sla		d
 		jr		nc,ACCUM_BOT
 
-		; Acumulate neighbors. Don't increment e: a cell is not its own neighbor
+		; Acumulate neighbors. Don't increment the centre accumulator (e): a cell is not its own neighbor
 		inc		c
 		inc		l
 
@@ -116,7 +117,8 @@ ACCUM:
 		push	de
 		push 	bc
 
-		; Now we jump to the update section (automatically since it is the next section in code )
+		; Now we jump to the update section (automatically since it is the next section in code)
+
 
 
 
@@ -127,12 +129,12 @@ UPDATE:
 	; Swap to update registers
 	exx
 
-	; We always want to write the c accumulator to e
+	; We always want to write the back bit to the column accumulator
 	pop		hl
 	call	START+UPDATE_NEXT_GEN
 
-	; If b is now 1, then we have finished the column.
-	; If b is now 0, then we write e to memory (and set b to 8 implicitly).
+	; If the byte counter is now 1, then we have finished the column.
+	; If the byte counter is now 0, then we write the column accumulator to memory (and set the byte counter to 8 implicitly).
 	ld		a,b
 	cp		1
 	jr		z,UPDATE_NEW_COLUMN
@@ -141,7 +143,7 @@ UPDATE:
 	; Swap to accum registers
     exx
 
-	; Get whether b, d and h are now all 0
+	; Get whether the top...bottom accumulators are now all 0
 	ld		a,0
 	or		b
 	or		d
@@ -157,8 +159,9 @@ UPDATE:
 	UPDATE_NEW_COLUMN:
 
 		; We may also have a new row.
-		; We can detect this if the decremented c is a multiple of 4.
-		; Increase b if there is a new row.
+		; We can detect this if the decremented column counter is a multiple of 4.
+		; Increment the byte counter if there is a new row.
+		; This will force the last bit of the row to be included in the column accumulator.
 		dec 	c
 		ld		a,c
         and 	%11
@@ -168,17 +171,17 @@ UPDATE:
 		; Begin updating
 		UPDATE_NEW_COLUMN_UPDATE_BEGIN:
 
-		; Update e if b != 1
+		; Update the column accumulator with the centre bit, if the byte counter != 1
 		pop		hl
 		call	START+UPDATE_NEXT_GEN_IF_B_GT_1
 
-		; Update l if b != 1.
-		; Although we have not had the chance to add 9 to l if it's alive,
-		; we know that l is dead since otherwise it would not be being written now.
+		; Update the column accumulator with the front bit, if the byte counter != 1
+		; Although we have not had the chance to add 9 to the front accumulator,
+		; we know that the front cell is dead since otherwise it would not be being written now.
 		pop		hl
 		call	START+UPDATE_NEXT_GEN_IF_B_GT_1
 
-		; Fill the rest of e
+		; Fill the rest of the column accumulator
 		call	START+UPDATE_FILL_NEXT_GEN
 
 		; Increment ix and iy
@@ -200,8 +203,8 @@ UPDATE:
         ; If there is no new row, jump to accumulation
         jp		nz,START+ACCUM
 
-        ; We are now done with this byte, so write it.
-        ; Set b back to 9, then resume accumulating.
+        ; We are now done with this byte, so write it to memory and the screen.
+        ; Set the byte counter back to 9, then resume accumulating.
         ; Switch to update registers to call the function.
         exx
         call	START+WRITE_NEXT_GEN
@@ -222,7 +225,7 @@ UPDATE:
 	; We are still working on the current column
 	UPDATE_SAME_COLUMN:
 
-		; Pop the e and l accumulators
+		; Pop the centre and front accumulators
 		pop		hl
 		pop		hl
 
@@ -233,7 +236,8 @@ UPDATE:
 
 
 
-; Same as the function below, but returns immediately if b = 1
+
+; Same as the function below, but returns immediately if the byte counter = 1
 UPDATE_NEXT_GEN_IF_B_GT_1:
 
 	; Return if b = 1
@@ -241,9 +245,9 @@ UPDATE_NEXT_GEN_IF_B_GT_1:
 	dec		a
 	ret		z
 
-; This part takes a number of neighbors, and updates e accordingly.
-; The number of neighbors must be stored in l.
-; The accumulators will be shifted along one step.
+; This part takes a number of neighbors, and updates the column accumulator accordingly.
+; The number of neighbors must be stored in the register l.
+; The back...front accumulators will be shifted along one step.
 ; The function will modify hl.
 UPDATE_NEXT_GEN:
 
@@ -264,10 +268,10 @@ UPDATE_NEXT_GEN:
 	; Pop back into bc
 	pop		bc
 
-	; Decrement b
+	; Decrement the byte counter
 	dec		b
 
-	; Shift accumulator registers
+	; Shift back...front accumulator registers
 	exx
 	ld		c,e
 	ld		e,l
@@ -294,8 +298,10 @@ UPDATE_NEXT_GEN:
 
 
 
+
+
 ; This part assumes that all remaining cells in the column are dead and have no neighbors.
-; While b != 1, e will be updated with the no neighbors rule.
+; While the byte counter != 1, the column accumulator will be updated with the no-neighbors rule.
 ; The function will modify hl.
 UPDATE_FILL_NEXT_GEN:
 
@@ -310,8 +316,8 @@ UPDATE_FILL_NEXT_GEN:
 	; The cell is alive in the next generation
 	UPDATE_ALL_NEXT_GEN_ALIVE:
 
-	; Shift e left until b = 1, filling in a one each time.
-	; Actually shift left until b = 0, then shift right at the end (with carry).
+	; Shift the column accumulator left until the byte counter = 1, filling in a one each time.
+	; Actually shift left until the byte counter = 0, then shift right at the end (with carry).
 	sll		e
 	djnz	UPDATE_ALL_NEXT_GEN_ALIVE
 	rr		e
@@ -321,8 +327,8 @@ UPDATE_FILL_NEXT_GEN:
 	; The cell is dead in the next generation
 	UPDATE_ALL_NEXT_GEN_DEAD:
 
-	; Shift e left until b = 1, filling in a zero each time.
-	; Actually shift left until b = 0, then shift right at the end (with carry).
+	; Shift the column accumulator left until the byte counter = 1, filling in a zero each time.
+    ; Actually shift left until the byte counter = 0, then shift right at the end (with carry).
 	sla		e
 	djnz	UPDATE_ALL_NEXT_GEN_DEAD
 	rr		e
@@ -331,18 +337,20 @@ UPDATE_FILL_NEXT_GEN:
 
 
 
+
+
 ; This part saves a byte back to the world, and also writes to the screen
-; The byte is taken from e, and written to (iy-1)
-; Has the byproduct of setting b to 8
+; The byte is taken from the column accumulator, and written to (iy-1)
+; Has the byproduct of setting the byte counter to 8
 WRITE_NEXT_GEN:
 
 	; Push bc (we need more registers to work with)
     push	bc
 
-	; Write e to memory
+	; Write the column accumulator to memory
 	ld		(iy - 1),e
 
-	; Load 95 into a, and subtract c.
+	; Load 95 into a, and subtract the column counter.
 	; This gives us the offset from the start of screen attributes in memory divided by 8.
 	; Therefore we need to multiply it by 8.
 	; But first we must move it into hl.
@@ -356,15 +364,13 @@ WRITE_NEXT_GEN:
 	ld		bc,SCREEN
 	add		hl,bc
 
-	; Iterate over the bits in e and set the attributes
+	; Iterate over the bits in the column accumulator and set the attributes
 	ld		b,8
 	WRITE_NEXT_GEN_LOOP:
 	sla		e
-	jr		c,WRITE_NEXT_GEN_LOOP_ALIVE
-	ld		(hl),%00010000
-	jr		WRITE_NEXT_GEN_LOOP_END
-	WRITE_NEXT_GEN_LOOP_ALIVE:
 	ld		(hl),%00100000
+	jr		c,WRITE_NEXT_GEN_LOOP_END
+	ld		(hl),%00010000
 	WRITE_NEXT_GEN_LOOP_END:
 	inc 	hl
     djnz	WRITE_NEXT_GEN_LOOP
@@ -372,18 +378,8 @@ WRITE_NEXT_GEN:
 	; Pop bc back
 	pop		bc
 
-	; Set b to 8
+	; Set the byte counter to 8
     ld		b,8
 
 	; Return
 	ret
-
-
-
-
-
-
-
-
-
-
