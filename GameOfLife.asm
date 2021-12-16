@@ -112,8 +112,7 @@ ACCUM:
 
 	ACCUM_FIN:
 
-		; Push all of our accumulators onto the stack
-		push   	hl
+		; Push the oldest two accumulators onto the stack
 		push	de
 		push 	bc
 
@@ -143,8 +142,7 @@ UPDATE:
 	; We are still working on the current column
 	UPDATE_SAME_COLUMN:
 
-		; Pop the centre and front accumulators
-		pop		hl
+		; Pop the centre accumulator
 		pop		hl
 
 		; Swap to accum registers and return to accumulating
@@ -156,31 +154,12 @@ UPDATE:
 
 			; We may also have a new row.
 			; We can detect this if the decremented column counter is a multiple of 4.
-			; Increment the byte counter if there is a new row.
-			; This will force the last bit of the row to be included in the column accumulator.
+			; Write the centre bit to the column accumulator if there is a new row
 			dec 	c
 			ld		a,c
 			and 	%11
-			jr		nz,UPDATE_NEW_COLUMN_UPDATE_BEGIN
-			inc 	b
-
-		; Begin updating
-		UPDATE_NEW_COLUMN_UPDATE_BEGIN:
-
-			; Update the column accumulator with the centre bit, if the byte counter != 1
 			pop		hl
-			ld		a,b
-			dec		a
-			call	nz,START+UPDATE_NEXT_GEN
-
-			; Update the column accumulator with the front bit, if the byte counter != 1
-			; Although we have not had the chance to add 9 to the front accumulator,
-			; we know that the front cell is dead since otherwise it would not be being written now.
-			pop		hl
-			ld		a,b
-			dec		a
-			jr		z,UPDATE_NEW_COLUMN_UPDATE_DONE
-			call	START+UPDATE_NEXT_GEN
+			call	z,START+UPDATE_NEXT_GEN
 
 		; Finish updating
         UPDATE_NEW_COLUMN_UPDATE_DONE:
@@ -189,25 +168,13 @@ UPDATE:
 			inc		ix
 			inc		iy
 
-			; Get whether this is a new row
+			; If this is not a new row, jump to column skip detection
 			ld		a,c
 			and 	%11
-
-			; Swap to accum registers
-			exx
-
-			; Update the top, middle and bottom bytes
-			ld		b,(ix - 4)
-			ld 		d,(ix + 0)
-			ld 		h,(ix + 4)
-
-			; If there is no new row, jump to skip detect
 			jr		nz,UPDATE_ACCUM_SKIP_DETECT
 
 			; We are now done with this byte, so write it to memory and the screen.
 			; Set the byte counter back to 9, then resume accumulating.
-			; Switch to update registers to call the function.
-			exx
 			call	START+WRITE_NEXT_GEN
 			inc		b
 
@@ -219,15 +186,20 @@ UPDATE:
 			jr		z,STOP
 			di
 
-			; Otherwise switch to accum registers
-			exx
-
 	; Possibly skip accumulation if top, middle and bottom bytes are 0
 	UPDATE_ACCUM_SKIP_DETECT:
 
+		; Swap to accum registers
+		exx
+
+		; Update the top, middle and bottom bytes
+		ld		b,(ix - 4)
+		ld 		d,(ix + 0)
+		ld 		h,(ix + 4)
+
 		; If top, middle and bottom bytes are zero, and the centre accumulator is zero, we can skip the column.
 		; We want the centre accumulator to be zero, as we don't want any non-zero neighbors in this column.
-		ld		a,0
+		xor		a
 		or		b
 		or		d
 		or		e
@@ -247,9 +219,9 @@ UPDATE:
 		exx
 
 		; If we did not start a new row, we want to write the back bit to the column accumulator, and then write the accumulator to memory
-		pop		hl
 		ld		a,c
 		and		%11
+		pop		hl
 		call	nz,START+UPDATE_NEXT_GEN
 		ld		a,c
         and		%11
