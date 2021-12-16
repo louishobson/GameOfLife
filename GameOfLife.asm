@@ -19,17 +19,19 @@ ld (ix+48+3),%10000000
 ld (ix+95),%00000001
 ld (ix+92),%10000000
 
-; The position of the rule set
+; The position of the rule set.
 ; Rather than packing the rule set, we just store 18 booleans as bytes.
 ; True means alive in the next generation, false means dead.
 ; The first 9 bytes define the rules for a living cell with 0 through 8 neighbors.
 ; The second 9 bytes define the same for a dead cell.
-#define RULES 63200
+; Note that 63232 = 0xf700 in hex
+#define RULES 63232
+#define RULES_UPPER $f7
 ld hl,RULES
-ld (hl),1
+ld (hl),255
 ld	bc,9
 add	hl,bc
-ld (hl),1
+ld (hl),255
 
 
 ; The position of screen attributes
@@ -204,7 +206,7 @@ UPDATE:
 		or		d
 		or		e
 		or		h
-		jp		nz,START+ACCUM
+		jr		nz,ACCUM
 
 	; Skip this column (all zeros)
 	UPDATE_SKIP_COLUMN:
@@ -231,13 +233,14 @@ UPDATE:
         dec		c
 
 		; Fill the column accumulator with the no-neighbors rule
-		call	START+UPDATE_FILL_NEXT_GEN
+		ld		hl,RULES
+		ld		e,(hl)
 
 		; Set b to 1
 		ld		b,1
 
 		; Jump to UPDATE_NEW_COLUMN_UPDATE_DONE
-		jr		UPDATE_NEW_COLUMN_UPDATE_DONE
+		jp		START+UPDATE_NEW_COLUMN_UPDATE_DONE
 
 
 
@@ -249,80 +252,30 @@ UPDATE:
 ; The function will modify hl.
 UPDATE_NEXT_GEN:
 
-	; Push bc (we need more registers to work with)
-	push	bc
-
-	; Load l into bc
-	ld		b,0
-	ld		c,l
-
-	; Get the position in memory of the rule (RULES plus bc)
-	ld		hl,RULES
-	add		hl,bc
+	; Get the position in memory of the rule.
+	; Since we have set l to the number of neighbors, we simply need to set h to the upper byte of the rules position
+	ld		h,RULES_UPPER
 
 	; Load the rule into the accumulator
 	ld		a,(hl)
 
-	; Pop back into bc
-	pop		bc
+	; Shift the rule, so that its value goes into the carry bit.
+	; Then shift the carry bit into e.
+	rla
+	rl		e
 
-	; Shift back...front accumulator registers
+	; Decrement the byte counter
+    dec		b
+
+    ; Shift back...front accumulator registers
 	exx
 	ld		c,e
 	ld		e,l
 	ld		l,0
 	exx
 
-	; Decrement the byte counter
-    dec		b
-
-	; Depending on the rule, split
-	and		a
-	jr		z,UPDATE_NEXT_GEN_DEAD
-
-	; The cell is alive in the next generation
-	UPDATE_NEXT_GEN_ALIVE:
-
-		; Shift e left, filling in a one, then return
-		sll		e
-		ret
-
-	; The cell is dead in the next generation
-	UPDATE_NEXT_GEN_DEAD:
-
-		; Shift e left, filling in a zero, then return
-		sla		e
-		ret
-
-
-
-
-; This part assumes that all remaining cells in the column are dead and have no neighbors.
-; Completely fill the column accumulator with the no neighbors rule.
-; The function will modify hl.
-UPDATE_FILL_NEXT_GEN:
-
-	; Load the rule into the accumulator
-	ld		hl,RULES
-	ld		a,(hl)
-
-	; Depending on the rule, split
-	and		a
-	jr		nz,UPDATE_FILL_NEXT_GEN_ALIVE
-
-	; The cell is dead in the next generation
-	UPDATE_FILL_NEXT_GEN_DEAD:
-
-		; Set the column accumulator to 0 and return
-		ld		e,0
-		ret
-
-	; The cell is alive in the next generation
-	UPDATE_FILL_NEXT_GEN_ALIVE:
-
-		; Set the column accumulator to all 1s and return
-		ld		e,255
-		ret
+	; Return
+	ret
 
 
 
@@ -333,11 +286,11 @@ UPDATE_FILL_NEXT_GEN:
 ; Has the byproduct of setting the byte counter to 8
 WRITE_NEXT_GEN:
 
-	; Push bc (we need more registers to work with)
-    push	bc
-
 	; Write the column accumulator to memory
 	ld		(iy - 1),e
+
+	; Push bc (we need more registers to work with)
+    push	bc
 
 	; Load 95 into a, and subtract the column counter.
 	; This gives us the offset from the start of screen attributes in memory divided by 8.
@@ -353,19 +306,59 @@ WRITE_NEXT_GEN:
 	ld		bc,SCREEN
 	add		hl,bc
 
-	; Iterate over the bits in the column accumulator and set the attributes
-	ld		b,8
-	WRITE_NEXT_GEN_LOOP:
-		sla		e
-		ld		(hl),%00100000
-		jr		c,WRITE_NEXT_GEN_LOOP_END
-		ld		(hl),%00010000
-	WRITE_NEXT_GEN_LOOP_END:
-		inc 	hl
-		djnz	WRITE_NEXT_GEN_LOOP
-
 	; Pop bc back
-	pop		bc
+    pop		bc
+
+	; Iterate over the bits in the column accumulator and set the attributes
+	ld		d,%00100000
+	rrc		e
+	rrc		e
+
+	ld		a,d
+	and		e
+	ld		(hl),a
+	inc		hl
+	rlc		e
+
+	ld		a,d
+	and		e
+	ld		(hl),a
+	inc		hl
+	rlc		e
+
+	ld		a,d
+    and		e
+    ld		(hl),a
+    inc		hl
+    rlc		e
+
+    ld		a,d
+    and		e
+    ld		(hl),a
+    inc		hl
+    rlc		e
+
+    ld		a,d
+    and		e
+    ld		(hl),a
+    inc		hl
+    rlc		e
+
+    ld		a,d
+    and		e
+    ld		(hl),a
+    inc		hl
+    rlc		e
+
+    ld		a,d
+    and		e
+    ld		(hl),a
+    inc		hl
+    rlc		e
+
+    ld		a,d
+    and		e
+    ld		(hl),a
 
 	; Set the byte counter to 8
     ld		b,8
