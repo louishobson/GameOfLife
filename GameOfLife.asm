@@ -225,7 +225,8 @@ UPDATE:
 	; Possibly skip accumulation if top, middle and bottom bytes are 0
 	UPDATE_ACCUM_SKIP_DETECT:
 
-		; If top, middle and bottom bytes are zero, and the centre byte is zero, we can skip the column
+		; If top, middle and bottom bytes are zero, and the centre accumulator is zero, we can skip the column.
+		; We want the centre accumulator to be zero, as we don't want any non-zero neighbors in this column.
 		ld		a,0
 		or		b
 		or		d
@@ -236,10 +237,10 @@ UPDATE:
 	; Skip this column (all zeros)
 	UPDATE_SKIP_COLUMN:
 
-		; Push onto the stack
+		; Push the back accumulator onto the stack
 		push	bc
 
-		; Zero the front accumulator
+		; Zero the back accumulator
 		ld		c,0
 
 		; Swap to update registers
@@ -250,9 +251,11 @@ UPDATE:
 		ld		a,c
 		and		%11
 		call	nz,START+UPDATE_NEXT_GEN
+		ld		a,c
+        and		%11
 		call	nz,START+WRITE_NEXT_GEN
 
-		; Decrement c
+		; Decrement the column counter
         dec		c
 
 		; Fill the column accumulator with the no-neighbors rule
