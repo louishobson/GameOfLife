@@ -15,7 +15,7 @@ ld iy,WORLD2
 ld (ix+0),%11000111
 ld (ix+3),%00000011
 ld (ix+32+2),%00000001
-ld (ix+48+3),%00000010
+ld (ix+48+3),%10000000
 ld (ix+95),%00000001
 ld (ix+92),%10000000
 
@@ -140,88 +140,6 @@ UPDATE:
 	jr		z,UPDATE_NEW_COLUMN
 	call	m,START+WRITE_NEXT_GEN
 
-	; Swap to accum registers
-    exx
-
-	; Get whether the top...bottom accumulators are now all 0
-	ld		a,0
-	or		b
-	or		d
-	or		h
-
-	; Swap to update registers
-    exx
-
-    ; If a is non-zero, then there are still bytes to process, so update the same column
-    jr		nz,UPDATE_SAME_COLUMN
-
-	; We have entered a new column
-	UPDATE_NEW_COLUMN:
-
-		; We may also have a new row.
-		; We can detect this if the decremented column counter is a multiple of 4.
-		; Increment the byte counter if there is a new row.
-		; This will force the last bit of the row to be included in the column accumulator.
-		dec 	c
-		ld		a,c
-        and 	%11
-		jr		nz,UPDATE_NEW_COLUMN_UPDATE_BEGIN
-		inc 	b
-
-		; Begin updating
-		UPDATE_NEW_COLUMN_UPDATE_BEGIN:
-
-		; Update the column accumulator with the centre bit, if the byte counter != 1
-		pop		hl
-		call	START+UPDATE_NEXT_GEN_IF_B_GT_1
-
-		; Update the column accumulator with the front bit, if the byte counter != 1
-		; Although we have not had the chance to add 9 to the front accumulator,
-		; we know that the front cell is dead since otherwise it would not be being written now.
-		pop		hl
-		call	START+UPDATE_NEXT_GEN_IF_B_GT_1
-
-		; Fill the rest of the column accumulator
-		call	START+UPDATE_FILL_NEXT_GEN
-
-		; Increment ix and iy
-		inc		ix
-		inc		iy
-
-		; Get whether this is a new row
-		ld		a,c
-        and 	%11
-
-        ; Swap to accum registers
-        exx
-
-        ; Update the top, middle and bottom bytes
-		ld		b,(ix - 4)
-		ld 		d,(ix + 0)
-		ld 		h,(ix + 4)
-
-        ; If there is no new row, jump to accumulation
-        jp		nz,START+ACCUM
-
-        ; We are now done with this byte, so write it to memory and the screen.
-        ; Set the byte counter back to 9, then resume accumulating.
-        ; Switch to update registers to call the function.
-        exx
-        call	START+WRITE_NEXT_GEN
-        inc		b
-
-		; If this is the end of the last row,stop
-        ld		a,c
-        and		a
-        ei
-        STOP:
-        jr		z,STOP
-		di
-
-    	; Otherwise switch to accum registers and jump to accumulation
-        exx
-        jp		nz,START+ACCUM
-
 	; We are still working on the current column
 	UPDATE_SAME_COLUMN:
 
@@ -230,20 +148,125 @@ UPDATE:
 		pop		hl
 
 		; Swap to accum registers and return to accumulating
-        exx
-        jp		START+ACCUM
+		exx
+		jp		START+ACCUM
+
+	; We have entered a new column
+	UPDATE_NEW_COLUMN:
+
+			; We may also have a new row.
+			; We can detect this if the decremented column counter is a multiple of 4.
+			; Increment the byte counter if there is a new row.
+			; This will force the last bit of the row to be included in the column accumulator.
+			dec 	c
+			ld		a,c
+			and 	%11
+			jr		nz,UPDATE_NEW_COLUMN_UPDATE_BEGIN
+			inc 	b
+
+		; Begin updating
+		UPDATE_NEW_COLUMN_UPDATE_BEGIN:
+
+			; Update the column accumulator with the centre bit, if the byte counter != 1
+			pop		hl
+			ld		a,b
+			dec		a
+			call	nz,START+UPDATE_NEXT_GEN
+
+			; Update the column accumulator with the front bit, if the byte counter != 1
+			; Although we have not had the chance to add 9 to the front accumulator,
+			; we know that the front cell is dead since otherwise it would not be being written now.
+			pop		hl
+			ld		a,b
+			dec		a
+			jr		z,UPDATE_NEW_COLUMN_UPDATE_DONE
+			call	START+UPDATE_NEXT_GEN
+
+		; Finish updating
+        UPDATE_NEW_COLUMN_UPDATE_DONE:
+
+			; Increment ix and iy
+			inc		ix
+			inc		iy
+
+			; Get whether this is a new row
+			ld		a,c
+			and 	%11
+
+			; Swap to accum registers
+			exx
+
+			; Update the top, middle and bottom bytes
+			ld		b,(ix - 4)
+			ld 		d,(ix + 0)
+			ld 		h,(ix + 4)
+
+			; If there is no new row, jump to skip detect
+			jr		nz,UPDATE_ACCUM_SKIP_DETECT
+
+			; We are now done with this byte, so write it to memory and the screen.
+			; Set the byte counter back to 9, then resume accumulating.
+			; Switch to update registers to call the function.
+			exx
+			call	START+WRITE_NEXT_GEN
+			inc		b
+
+			; If this is the end of the last row,stop
+			ld		a,c
+			and		a
+			ei
+			STOP:
+			jr		z,STOP
+			di
+
+			; Otherwise switch to accum registers
+			exx
+
+	; Possibly skip accumulation if top, middle and bottom bytes are 0
+	UPDATE_ACCUM_SKIP_DETECT:
+
+		; If top, middle and bottom bytes are zero, and the centre byte is zero, we can skip the column
+		ld		a,0
+		or		b
+		or		d
+		or		e
+		or		h
+		jp		nz,START+ACCUM
+
+	; Skip this column (all zeros)
+	UPDATE_SKIP_COLUMN:
+
+		; Push onto the stack
+		push	bc
+
+		; Zero the front accumulator
+		ld		c,0
+
+		; Swap to update registers
+		exx
+
+		; If we did not start a new row, we want to write the back bit to the column accumulator, and then write the accumulator to memory
+		pop		hl
+		ld		a,c
+		and		%11
+		call	nz,START+UPDATE_NEXT_GEN
+		call	nz,START+WRITE_NEXT_GEN
+
+		; Decrement c
+        dec		c
+
+		; Fill the column accumulator with the no-neighbors rule
+		call	START+UPDATE_FILL_NEXT_GEN
+
+		; Set b to 1
+		ld		b,1
+
+		; Jump to UPDATE_NEW_COLUMN_UPDATE_DONE
+		jr		UPDATE_NEW_COLUMN_UPDATE_DONE
 
 
 
 
-
-; Same as the function below, but returns immediately if the byte counter = 1
-UPDATE_NEXT_GEN_IF_B_GT_1:
-
-	; Return if b = 1
-	ld		a,b
-	dec		a
-	ret		z
 
 ; This part takes a number of neighbors, and updates the column accumulator accordingly.
 ; The number of neighbors must be stored in the register l.
@@ -268,15 +291,15 @@ UPDATE_NEXT_GEN:
 	; Pop back into bc
 	pop		bc
 
-	; Decrement the byte counter
-	dec		b
-
 	; Shift back...front accumulator registers
 	exx
 	ld		c,e
 	ld		e,l
 	ld		l,0
 	exx
+
+	; Decrement the byte counter
+    dec		b
 
 	; Depending on the rule, split
 	and		a
@@ -285,23 +308,22 @@ UPDATE_NEXT_GEN:
 	; The cell is alive in the next generation
 	UPDATE_NEXT_GEN_ALIVE:
 
-	; Shift e left, filling in a one, then return
-   	sll		e
-   	ret
+		; Shift e left, filling in a one, then return
+		sll		e
+		ret
 
 	; The cell is dead in the next generation
 	UPDATE_NEXT_GEN_DEAD:
 
-	; Shift e left, filling in a zero, then return
-	sla		e
-	ret
-
+		; Shift e left, filling in a zero, then return
+		sla		e
+		ret
 
 
 
 
 ; This part assumes that all remaining cells in the column are dead and have no neighbors.
-; While the byte counter != 1, the column accumulator will be updated with the no-neighbors rule.
+; Completely fill the column accumulator with the no neighbors rule.
 ; The function will modify hl.
 UPDATE_FILL_NEXT_GEN:
 
@@ -311,29 +333,21 @@ UPDATE_FILL_NEXT_GEN:
 
 	; Depending on the rule, split
 	and		a
-	jr		z,UPDATE_ALL_NEXT_GEN_DEAD
-
-	; The cell is alive in the next generation
-	UPDATE_ALL_NEXT_GEN_ALIVE:
-
-	; Shift the column accumulator left until the byte counter = 1, filling in a one each time.
-	; Actually shift left until the byte counter = 0, then shift right at the end (with carry).
-	sll		e
-	djnz	UPDATE_ALL_NEXT_GEN_ALIVE
-	rr		e
-	ld		b,1
-	ret
+	jr		nz,UPDATE_FILL_NEXT_GEN_ALIVE
 
 	; The cell is dead in the next generation
-	UPDATE_ALL_NEXT_GEN_DEAD:
+	UPDATE_FILL_NEXT_GEN_DEAD:
 
-	; Shift the column accumulator left until the byte counter = 1, filling in a zero each time.
-    ; Actually shift left until the byte counter = 0, then shift right at the end (with carry).
-	sla		e
-	djnz	UPDATE_ALL_NEXT_GEN_DEAD
-	rr		e
-	ld		b,1
-	ret
+		; Set the column accumulator to 0 and return
+		ld		e,0
+		ret
+
+	; The cell is alive in the next generation
+	UPDATE_FILL_NEXT_GEN_ALIVE:
+
+		; Set the column accumulator to all 1s and return
+		ld		e,255
+		ret
 
 
 
@@ -367,13 +381,13 @@ WRITE_NEXT_GEN:
 	; Iterate over the bits in the column accumulator and set the attributes
 	ld		b,8
 	WRITE_NEXT_GEN_LOOP:
-	sla		e
-	ld		(hl),%00100000
-	jr		c,WRITE_NEXT_GEN_LOOP_END
-	ld		(hl),%00010000
+		sla		e
+		ld		(hl),%00100000
+		jr		c,WRITE_NEXT_GEN_LOOP_END
+		ld		(hl),%00010000
 	WRITE_NEXT_GEN_LOOP_END:
-	inc 	hl
-    djnz	WRITE_NEXT_GEN_LOOP
+		inc 	hl
+		djnz	WRITE_NEXT_GEN_LOOP
 
 	; Pop bc back
 	pop		bc
