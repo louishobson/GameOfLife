@@ -1,12 +1,12 @@
 ; The load position of the program
-#define START 62000
+#define START 60000
 
-; The position of the worlds
-; Each world consists of 24 rows of 4 bytes, making 96 bytes in total
-; There also needs to be padding of 4 zero bytes before and after each
-; Therefore if we can set the worlds 100 bytes apart, so that they share some padding
-#define WORLD1 63000
-#define WORLD2 63100
+; The position of the worlds.
+; Each world consists of 24 rows of 4 bytes, making 96 bytes in total.
+; There also needs to be padding of 4 zero bytes before and after each.
+; Therefore if we can set the worlds 100 bytes apart, so that they share some padding.
+#define WORLD1 62000
+#define WORLD2 62100
 
 ; We will choose ix to point to the world we are reading from, and iy to the world we are writing to
 
@@ -24,18 +24,18 @@ ld (ix+92),%10000000
 ; True means alive in the next generation, false means dead.
 ; The first 9 bytes define the rules for a living cell with 0 through 8 neighbors.
 ; The second 9 bytes define the same for a dead cell.
-; Note that 63232 = 0xf700 in hex, so to get a rule with a number of neighbors, we load the number of neighbors into the bottom byte of the address.
-#define RULES 63232
-#define RULES_UPPER $f7
+; Note that 62720 = 0xf500 in hex, so to get a rule with a number of neighbors, we load the number of neighbors into the bottom byte of the address.
+#define RULES 62720
+#define RULES_UPPER $f5
 ld hl,RULES
 ld (hl),255
 ld	bc,9
 add	hl,bc
 ld (hl),255
 
-
 ; The position of screen attributes
 #define SCREEN $5800
+#define SCREEN_UPPER $58
 
 ; Disable interrupts
 di
@@ -289,9 +289,6 @@ WRITE_NEXT_GEN:
 	; Write the column accumulator to memory
 	ld		(iy - 1),e
 
-	; Push bc (we need more registers to work with)
-	push	bc
-
 	; Load 95 into a, and subtract the column counter.
 	; This gives us the offset from the start of screen attributes in memory divided by 8.
 	; Therefore we need to multiply it by 8.
@@ -303,11 +300,9 @@ WRITE_NEXT_GEN:
 	add		hl,hl
 	add		hl,hl
 	add		hl,hl
-	ld		bc,SCREEN
-	add		hl,bc
-
-	; Pop bc back
-	pop		bc
+	ld		a,h
+	or		SCREEN_UPPER
+	ld		h,a
 
 	; Iterate over the bits in the column accumulator and set the attributes
 	ld		d,%00100000
