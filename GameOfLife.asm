@@ -303,54 +303,54 @@ WRITE_NEXT_GEN:
 	add		hl,hl
 
 	; Iterate over the bits in the column accumulator and set the attributes
-	ld		d,%00100000
-	rrc		e
-	rrc		e
+	ld		b,255
+	ld		d,0
 
-	ld		a,d
-	and		e
+	ld		a,b
+	sla		e
+	adc		a,d
 	ld		(hl),a
 	inc		hl
-	rlc		e
 
-	ld		a,d
-	and		e
-	ld		(hl),a
-	inc		hl
-	rlc		e
+	ld		a,b
+    sla		e
+    adc		a,d
+    ld		(hl),a
+    inc		hl
 
-	ld		a,d
-	and		e
-	ld		(hl),a
-	inc		hl
-	rlc		e
+	ld		a,b
+    sla		e
+    adc		a,d
+    ld		(hl),a
+    inc		hl
 
-	ld		a,d
-	and		e
-	ld		(hl),a
-	inc		hl
-	rlc		e
+	ld		a,b
+    sla		e
+    adc		a,d
+    ld		(hl),a
+    inc		hl
 
-	ld		a,d
-	and		e
-	ld		(hl),a
-	inc		hl
-	rlc		e
+	ld		a,b
+    sla		e
+    adc		a,d
+    ld		(hl),a
+    inc		hl
 
-	ld		a,d
-	and		e
-	ld		(hl),a
-	inc		hl
-	rlc		e
+	ld		a,b
+    sla		e
+    adc		a,d
+    ld		(hl),a
+    inc		hl
 
-	ld		a,d
-	and		e
-	ld		(hl),a
-	inc		hl
-	rlc		e
+	ld		a,b
+    sla		e
+    adc		a,d
+    ld		(hl),a
+    inc		hl
 
-	ld		a,d
-	and		e
+	ld		a,b
+	sla		e
+	adc		a,d
 	ld		(hl),a
 
 	; Set the byte counter to 8
