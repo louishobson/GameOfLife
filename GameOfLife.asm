@@ -24,7 +24,7 @@ ld (ix+92),%10000000
 ; True means alive in the next generation, false means dead.
 ; The first 9 bytes define the rules for a living cell with 0 through 8 neighbors.
 ; The second 9 bytes define the same for a dead cell.
-; Note that 63232 = 0xf700 in hex
+; Note that 63232 = 0xf700 in hex, so to get a rule with a number of neighbors, we load the number of neighbors into the bottom byte of the address.
 #define RULES 63232
 #define RULES_UPPER $f7
 ld hl,RULES
@@ -154,39 +154,39 @@ UPDATE:
 	; We have entered a new column
 	UPDATE_NEW_COLUMN:
 
-			; We may also have a new row.
-			; We can detect this if the decremented column counter is a multiple of 4.
-			; Write the centre bit to the column accumulator if there is a new row
-			dec 	c
-			ld		a,c
-			and 	%11
-			pop		hl
-			call	z,START+UPDATE_NEXT_GEN
+		; We may also have a new row.
+		; We can detect this if the decremented column counter is a multiple of 4.
+		; Write the centre bit to the column accumulator if there is a new row
+		dec 	c
+		ld		a,c
+		and 	%11
+		pop		hl
+		call	z,START+UPDATE_NEXT_GEN
 
-		; Finish updating
-        UPDATE_NEW_COLUMN_UPDATE_DONE:
+	; Load the next column
+	UPDATE_LOAD_NEXT_COLUMN:
 
-			; Increment ix and iy
-			inc		ix
-			inc		iy
+		; Increment ix and iy
+		inc		ix
+		inc		iy
 
-			; If this is not a new row, jump to column skip detection
-			ld		a,c
-			and 	%11
-			jr		nz,UPDATE_ACCUM_SKIP_DETECT
+		; If this is not a new row, jump to column skip detection
+		ld		a,c
+		and 	%11
+		jr		nz,UPDATE_ACCUM_SKIP_DETECT
 
-			; We are now done with this byte, so write it to memory and the screen.
-			; Set the byte counter back to 9, then resume accumulating.
-			call	START+WRITE_NEXT_GEN
-			inc		b
+		; We are now done with this byte, so write it to memory and the screen.
+		; Set the byte counter back to 9, then resume accumulating.
+		call	START+WRITE_NEXT_GEN
+		inc		b
 
-			; If this is the end of the last row,stop
-			ld		a,c
-			and		a
-			ei
-			STOP:
-			jr		z,STOP
-			di
+		; If this is the end of the last row,stop
+		ld		a,c
+		and		a
+		ei
+		STOP:
+		jr		z,STOP
+		di
 
 	; Possibly skip accumulation if top, middle and bottom bytes are 0
 	UPDATE_ACCUM_SKIP_DETECT:
@@ -239,8 +239,8 @@ UPDATE:
 		; Set b to 1
 		ld		b,1
 
-		; Jump to UPDATE_NEW_COLUMN_UPDATE_DONE
-		jp		START+UPDATE_NEW_COLUMN_UPDATE_DONE
+		; Jump to UPDATE_LOAD_NEXT_COLUMN
+		jp		START+UPDATE_LOAD_NEXT_COLUMN
 
 
 
@@ -281,9 +281,9 @@ UPDATE_NEXT_GEN:
 
 
 
-; This part saves a byte back to the world, and also writes to the screen
-; The byte is taken from the column accumulator, and written to (iy-1)
-; Has the byproduct of setting the byte counter to 8
+; This part saves a byte back to the world, and also writes to the screen.
+; The byte is taken from the column accumulator, and written to (iy-1).
+; Has the byproduct of setting the byte counter to 8.
 WRITE_NEXT_GEN:
 
 	; Write the column accumulator to memory
