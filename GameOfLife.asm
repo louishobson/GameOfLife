@@ -226,11 +226,11 @@ UPDATE:
 		pop		hl
 		call	nz,START+UPDATE_NEXT_GEN
 		ld		a,c
-        and		%11
+		and		%11
 		call	nz,START+WRITE_NEXT_GEN
 
 		; Decrement the column counter
-        dec		c
+		dec		c
 
 		; Fill the column accumulator with the no-neighbors rule
 		ld		hl,RULES
@@ -265,9 +265,9 @@ UPDATE_NEXT_GEN:
 	rl		e
 
 	; Decrement the byte counter
-    dec		b
+	dec		b
 
-    ; Shift back...front accumulator registers
+	; Shift back...front accumulator registers
 	exx
 	ld		c,e
 	ld		e,l
@@ -290,7 +290,7 @@ WRITE_NEXT_GEN:
 	ld		(iy - 1),e
 
 	; Push bc (we need more registers to work with)
-    push	bc
+	push	bc
 
 	; Load 95 into a, and subtract the column counter.
 	; This gives us the offset from the start of screen attributes in memory divided by 8.
@@ -307,7 +307,7 @@ WRITE_NEXT_GEN:
 	add		hl,bc
 
 	; Pop bc back
-    pop		bc
+	pop		bc
 
 	; Iterate over the bits in the column accumulator and set the attributes
 	ld		d,%00100000
@@ -327,41 +327,41 @@ WRITE_NEXT_GEN:
 	rlc		e
 
 	ld		a,d
-    and		e
-    ld		(hl),a
-    inc		hl
-    rlc		e
+	and		e
+	ld		(hl),a
+	inc		hl
+	rlc		e
 
-    ld		a,d
-    and		e
-    ld		(hl),a
-    inc		hl
-    rlc		e
+	ld		a,d
+	and		e
+	ld		(hl),a
+	inc		hl
+	rlc		e
 
-    ld		a,d
-    and		e
-    ld		(hl),a
-    inc		hl
-    rlc		e
+	ld		a,d
+	and		e
+	ld		(hl),a
+	inc		hl
+	rlc		e
 
-    ld		a,d
-    and		e
-    ld		(hl),a
-    inc		hl
-    rlc		e
+	ld		a,d
+	and		e
+	ld		(hl),a
+	inc		hl
+	rlc		e
 
-    ld		a,d
-    and		e
-    ld		(hl),a
-    inc		hl
-    rlc		e
+	ld		a,d
+	and		e
+	ld		(hl),a
+	inc		hl
+	rlc		e
 
-    ld		a,d
-    and		e
-    ld		(hl),a
+	ld		a,d
+	and		e
+	ld		(hl),a
 
 	; Set the byte counter to 8
-    ld		b,8
+	ld		b,8
 
 	; Return
 	ret
