@@ -293,7 +293,8 @@ WRITE_NEXT_GEN:
 	; Load 95 into a, and subtract the column counter.
 	; This gives us the offset from the start of screen attributes in memory divided by 8.
 	; Therefore we need to multiply it by 8.
-	; We add in the screen offset divided by 8, before we multiply by 8.
+	; We load a into hl, and add in the screen offset divided by 8.
+	; We can then multiply hl by 8 to get the write offset.
 	ld		a,95
 	sub		c
 	ld		h,SCREEN_UPPER_OVER_8
