@@ -36,6 +36,7 @@ ld (hl),255
 ; The position of screen attributes
 #define SCREEN $5800
 #define SCREEN_UPPER $58
+#define SCREEN_UPPER_OVER_8 $B
 
 ; Disable interrupts
 di
@@ -292,17 +293,14 @@ WRITE_NEXT_GEN:
 	; Load 95 into a, and subtract the column counter.
 	; This gives us the offset from the start of screen attributes in memory divided by 8.
 	; Therefore we need to multiply it by 8.
-	; But first we must move it into hl.
+	; We add in the screen offset divided by 8, before we multiply by 8.
 	ld		a,95
 	sub		c
-	ld		h,0
+	ld		h,SCREEN_UPPER_OVER_8
 	ld		l,a
 	add		hl,hl
 	add		hl,hl
 	add		hl,hl
-	ld		a,h
-	or		SCREEN_UPPER
-	ld		h,a
 
 	; Iterate over the bits in the column accumulator and set the attributes
 	ld		d,%00100000
