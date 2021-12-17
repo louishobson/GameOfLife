@@ -10,28 +10,34 @@
 
 ; We will choose ix to point to the world we are reading from, and iy to the world we are writing to
 
-ld ix,WORLD1
-ld iy,WORLD2
-ld (ix+0),%11000111
-ld (ix+3),%00000011
-ld (ix+32+2),%00000001
-ld (ix+48+3),%10000000
-ld (ix+95),%00000001
-ld (ix+92),%10000000
+ld		ix,WORLD1
+ld		iy,WORLD2
+ld		(ix+0),%11000111
+ld		(ix+3),%00000011
+ld		(ix+32+2),%00000001
+ld		(ix+48+3),%10000000
+ld		(ix+95),%00000001
+ld		(ix+92),%10000000
 
 ; The position of the rule set.
 ; Rather than packing the rule set, we just store 18 booleans as bytes.
+; We write true as 255 and false as 0.
 ; True means alive in the next generation, false means dead.
 ; The first 9 bytes define the rules for a living cell with 0 through 8 neighbors.
 ; The second 9 bytes define the same for a dead cell.
 ; Note that 62720 = 0xf500 in hex, so to get a rule with a number of neighbors, we load the number of neighbors into the bottom byte of the address.
 #define RULES 62720
 #define RULES_UPPER $f5
-ld hl,RULES
-ld (hl),255
-ld	bc,9
-add	hl,bc
-ld (hl),255
+ld		hl,RULES+1
+ld		(hl),255
+ld		hl,RULES+10
+ld		(hl),255
+
+; Set to 0 for dead as black, and white as alive.
+; Set to 255 for dead as white, and alive as black.
+#define COLOR_FLIP 62738
+ld		hl,COLOR_FLIP
+ld		(hl),255
 
 ; The position of screen attributes
 #define SCREEN $5800
@@ -301,6 +307,11 @@ WRITE_NEXT_GEN:
 	add		hl,hl
 	add		hl,hl
 	add		hl,hl
+
+	; Possibly flip the screen colors
+	ld		a,(COLOR_FLIP)
+	xor		e
+	ld		e,a
 
 	; Iterate over the bits in the column accumulator and set the attributes
 
