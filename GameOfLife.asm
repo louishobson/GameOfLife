@@ -36,7 +36,6 @@ ld (hl),255
 ; The position of screen attributes
 #define SCREEN $5800
 #define SCREEN_UPPER $58
-#define SCREEN_UPPER_OVER_8 $B
 
 ; Disable interrupts
 di
@@ -297,7 +296,7 @@ WRITE_NEXT_GEN:
 	; We can then multiply hl by 8 to get the write offset.
 	ld		a,95
 	sub		c
-	ld		h,SCREEN_UPPER_OVER_8
+	ld		h,SCREEN_UPPER/8
 	ld		l,a
 	add		hl,hl
 	add		hl,hl
