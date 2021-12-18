@@ -2,23 +2,23 @@ EDIT RULESET
 Live cell colour:
 
 LIVE CELLS:
-With 0 neighbors:
-With 1 neighbors:
-With 2 neighbors:
-With 3 neighbors:
-With 4 neighbors:
-With 5 neighbors:
-With 6 neighbors:
-With 7 neighbors:
-With 8 neighbors:
+With 0 neighbours:
+With 1 neighbours:
+With 2 neighbours:
+With 3 neighbours:
+With 4 neighbours:
+With 5 neighbours:
+With 6 neighbours:
+With 7 neighbours:
+With 8 neighbours:
 
 DEAD CELLS:
-With 0 neighbors:
-With 1 neighbors:
-With 2 neighbors:
-With 3 neighbors:
-With 4 neighbors:
-With 5 neighbors:
-With 6 neighbors:
-With 7 neighbors:
-With 8 neighbors:
+With 0 neighbours:
+With 1 neighbours:
+With 2 neighbours:
+With 3 neighbours:
+With 4 neighbours:
+With 5 neighbours:
+With 6 neighbours:
+With 7 neighbours:
+With 8 neighbours:
