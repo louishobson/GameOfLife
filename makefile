@@ -2,7 +2,7 @@
 
 all: tzx bin wav
 
-tzx: tzx/GameOfLifeLoader.tzx tzx/GameOfLifeBytes.tzx tzx/GameOfLifeText.tzx tzx/GameOfLife.tzx
+tzx: tzx/GameOfLifeLoader.tzx tzx/GameOfLifeBytes.tzx tzx/GameOfLife.tzx
 bin: bin/GameOfLifeBytes.bin
 wav: wav/GameOfLife.wav
 
@@ -22,11 +22,8 @@ tzx/GameOfLifeBytes.tzx: GameOfLife.asm Printing.asm
 bin/GameOfLifeBytes.bin: GameOfLife.asm
 	/home/louis/Downloads/zxbasic/zxbasic/zxbasm -O0 GameOfLife.asm -o bin/GameOfLifeBytes.bin
 
-tzx/GameOfLifeText.tzx: GameOfLifeEditRulesText.txt
-	python3 TextConv.py GameOfLifeEditRulesText.txt GoLText tzx/GameOfLifeText.tzx
-
-tzx/GameOfLife.tzx: tzx/GameOfLifeLoader.tzx tzx/GameOfLifeBytes.tzx tzx/GameOfLifeText.tzx
-	tzxmerge tzx/GameOfLifeLoader.tzx tzx/GameOfLifeBytes.tzx tzx/GameOfLifeText.tzx -o tzx/GameOfLife.tzx
+tzx/GameOfLife.tzx: tzx/GameOfLifeLoader.tzx tzx/GameOfLifeBytes.tzx
+	tzxmerge tzx/GameOfLifeLoader.tzx tzx/GameOfLifeBytes.tzx -o tzx/GameOfLife.tzx
 
 wav/GameOfLife.wav: tzx/GameOfLife.tzx
 	tape2wav tzx/GameOfLife.tzx wav/GameOfLife.wav
