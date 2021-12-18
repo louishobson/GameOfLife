@@ -3,18 +3,8 @@
 ;
 ; Various functions for printing characters to the screen
 
-; Define the position of the character bitmaps in memory.
-#define CHAR_BITMAPS $3c00
-
-; Define the position of the pixel data in memory, and the length of the data.
-#define PIXEL_DATA $4000
-#define PIXEL_DATA_LENGTH $1800
-#define PIXEL_DATA_LENGTH_UPPER $18
-
-; Define the position of the attribute data in memory, and length of the data
-#define ATTRIBUTE_DATA $5800
-#define ATTRIBUTE_DATA_LENGTH $0300
-#define ATTRIBUTE_DATA_LENGTH_UPPER $03
+; Include macros
+#include "Macros.asm"
 
 
 
