@@ -1,4 +1,5 @@
 EDIT RULESET
+Live cell colour:
 
 LIVE CELLS:
 With 0 neighbors:
