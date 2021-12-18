@@ -373,25 +373,17 @@ WRITE_NEXT_GEN:
 
 ; Text for the edit rules menu
 EDIT_RULES_TEXT:
-	defb	"EDIT RULESET",10
-	defb	"Live colour:",10,10
-	defb	"LIVE CELLS:",10
-	defb	"With 0 neighbors:",10
-	defb	"With 1 neighbors:",10
-	defb	"With 2 neighbors:",10
-	defb	"With 3 neighbors:",10
-	defb	"With 4 neighbors:",10
-	defb	"With 5 neighbors:",10
-	defb	"With 6 neighbors:",10
-	defb	"With 7 neighbors:",10
-	defb	"With 8 neighbors:",10,10
-	defb	"DEAD CELLS:",10
-	defb	"With 0 neighbors:",10
-	defb	"With 1 neighbors:",10
-	defb	"With 2 neighbors:",10
-	defb	"With 3 neighbors:",10
-	defb	"With 4 neighbors:",10
-	defb	"With 5 neighbors:",10
-	defb	"With 6 neighbors:",10
-	defb	"With 7 neighbors:",10
-	defb	"With 8 neighbors:",0
+	incbin	"GameOfLifeEditRulesText.txt"
+	defb	0
+
+EDIT_RULES_TEXT_BLACK:
+	defb	"Black",0
+
+EDIT_RULES_TEXT_WHITE:
+	defb	"White",0
+
+EDIT_RULES_TEXT_LIVE:
+	defb	"Live",0
+
+EDIT_RULES_TEXT_DEAD:
+	defb	"Dead",0
