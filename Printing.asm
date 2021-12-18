@@ -84,7 +84,7 @@ GET_PIXEL_LOCATION:
 ; d should be set to the y coordinate [0;23]
 ; e should be set to the x coordinate [0;31]
 ; We need (y * 32) + x, that is
-; 0 0 0 0 0 0 Y4 Y3  Y2 Y1 Y0 X4 ... X0
+; 0 1 0 1 1 0 Y4 Y3  Y2 Y1 Y0 X4 ... X0
 GET_ATTRIBUTE_LOCATION:
 
 	; We can get Y4...Y0 in position by shifting.
