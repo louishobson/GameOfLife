@@ -6,8 +6,15 @@
 ; Define the position of the character bitmaps in memory.
 #define CHAR_BITMAPS $3c00
 
-; Define the position of the pixel data in memory
+; Define the position of the pixel data in memory, and the length of the data.
 #define PIXEL_DATA $4000
+#define PIXEL_DATA_LENGTH $1800
+#define PIXEL_DATA_LENGTH_UPPER $18
+
+; Define the position of the attribute data in memory, and length of the data
+#define ATTRIBUTE_DATA $5800
+#define ATTRIBUTE_DATA_LENGTH $0300
+#define ATTRIBUTE_DATA_LENGTH_UPPER $03
 
 
 
@@ -73,6 +80,41 @@ GET_PIXEL_LOCATION:
 
 
 
+; This function calculates the position of a character in screen attribute memory.
+; d should be set to the y coordinate [0;23]
+; e should be set to the x coordinate [0;31]
+; We need (y * 32) + x, that is
+; 0 0 0 0 0 0 Y4 Y3  Y2 Y1 Y0 X4 ... X0
+GET_ATTRIBUTE_LOCATION:
+
+	; We can get Y4...Y0 in position by shifting.
+	ld		a,d
+	rrca
+	rrca
+	rrca
+
+	; Load into d for later, then get only Y2...Y0
+	ld		d,a
+	and		%11100000
+
+	; Add in X4...X0 and we are done for the lower byte
+	or		e
+	ld		e,a
+
+	; Now finish off the top byte.
+	; Also add in the offset to the start of attributes.
+	ld		a,d
+	and		%00000011
+	or		%01011000
+	ld		d,a
+
+	; Return
+	ret
+
+
+
+
+
 ; This function prints a string.
 ; The location in memory of the start of the string is hl.
 ; The coordinates on the screen is de (see GET_PIXEL_LOCATION).
@@ -95,8 +137,8 @@ PRINT_STRING:
 		ret
 		PRINT_STRING_NOT_NULL:
 
-		; If there is a carriage return, jump back to the top
-		cp		$0d
+		; If there is a newline, jump back to the top
+		cp		10
 		jr		nz,PRINT_STRING_NOT_CR
 		inc		hl
 		pop		de
@@ -138,3 +180,54 @@ PRINT_STRING:
 
 		; Loop
 		jr		PRINT_STRING_CHAR_LOOP
+
+
+
+
+
+
+; This function fills the screen pixel data with the contents of a.
+; hl and bc are modified.
+FILL_PIXEL_DATA:
+
+	; Set hl to PIXEL_DATA
+	ld		hl,PIXEL_DATA
+
+	; Clear the screen. Since there are $1800 bytes to write, we write 256 bytes $18 times.
+	ld		c,PIXEL_DATA_LENGTH_UPPER
+	FILL_PIXEL_DATA_OUTER_LOOP:
+		ld		b,256
+		FILL_PIXEL_DATA_INNER_LOOP:
+			ld		(hl),a
+			inc		hl
+		djnz	FILL_PIXEL_DATA_INNER_LOOP
+	dec		c
+	jr		nz,FILL_PIXEL_DATA_OUTER_LOOP
+
+	; Return
+	ret
+
+
+
+
+
+; This function fills the screen attribute data with the contents of a.
+; hl and bc are modified.
+FILL_ATTRIBUTE_DATA:
+
+	; Set hl to ATTRIBUTE_DATA
+	ld		hl,ATTRIBUTE_DATA
+
+	; Clear the screen. Since there are $0300 bytes to write, we write 256 bytes 3 times.
+	ld		c,ATTRIBUTE_DATA_LENGTH_UPPER
+	FILL_ATTRIBUTE_DATA_OUTER_LOOP:
+		ld		b,256
+		FILL_ATTRIBUTE_DATA_INNER_LOOP:
+			ld		(hl),a
+			inc		hl
+		djnz	FILL_ATTRIBUTE_DATA_INNER_LOOP
+	dec		c
+	jr		nz,FILL_ATTRIBUTE_DATA_OUTER_LOOP
+
+	; Return
+	ret
