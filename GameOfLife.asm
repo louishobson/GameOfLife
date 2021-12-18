@@ -359,3 +359,39 @@ WRITE_NEXT_GEN:
 
 	; Return
 	ret
+
+
+
+
+
+; Include Printing.asm
+#include "Printing.asm"
+
+
+
+
+
+; Text for the edit rules menu
+EDIT_RULES_TEXT:
+	defb	"EDIT RULESET",10
+	defb	"Live colour:",10,10
+	defb	"LIVE CELLS:",10
+	defb	"With 0 neighbors:",10
+	defb	"With 1 neighbors:",10
+	defb	"With 2 neighbors:",10
+	defb	"With 3 neighbors:",10
+	defb	"With 4 neighbors:",10
+	defb	"With 5 neighbors:",10
+	defb	"With 6 neighbors:",10
+	defb	"With 7 neighbors:",10
+	defb	"With 8 neighbors:",10,10
+	defb	"DEAD CELLS:",10
+	defb	"With 0 neighbors:",10
+	defb	"With 1 neighbors:",10
+	defb	"With 2 neighbors:",10
+	defb	"With 3 neighbors:",10
+	defb	"With 4 neighbors:",10
+	defb	"With 5 neighbors:",10
+	defb	"With 6 neighbors:",10
+	defb	"With 7 neighbors:",10
+	defb	"With 8 neighbors:",0
