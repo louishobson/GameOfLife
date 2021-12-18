@@ -1,7 +1,7 @@
 .idea
 .idea/
 
-*.tzx
-*.bin
-*.wav
+tzx
+bin
+wav
 SpectrumMachineLanguageForTheAbsoluteBeginner.pdf
