@@ -1,6 +1,10 @@
 #!/bin/make
 
-all: GameOfLifeLoader.tzx GameOfLifeBytes.tzx GameOfLifeBytes.bin GameOfLife.tzx GameOfLife.wav
+all: tzx bin wav
+
+tzx: tzx/GameOfLifeLoader.tzx tzx/GameOfLifeBytes.tzx tzx/GameOfLifeText.tzx tzx/GameOfLife.tzx
+bin: bin/GameOfLifeBytes.bin
+wav: wav/GameOfLife.wav
 
 .PHONY: clean
 clean:
@@ -9,23 +13,26 @@ clean:
 	find . -type f -name "*\.tzx" -delete -print
 	find . -type f -name "*\.wav" -delete -print
 
-GameOfLifeLoader.tzx: GameOfLifeLoader.tzx_
-	cp GameOfLifeLoader.tzx_ GameOfLifeLoader.tzx
+tzx/GameOfLifeLoader.tzx: GameOfLifeLoader.tzx_
+	cp GameOfLifeLoader.tzx_ tzx/GameOfLifeLoader.tzx
 
-GameOfLifeBytes.tzx: GameOfLife.asm
-	/home/louis/Downloads/zxbasic/zxbasic/zxbasm -T -O0 GameOfLife.asm -o GameOfLifeBytes.tzx
+tzx/GameOfLifeBytes.tzx: GameOfLife.asm Printing.asm
+	/home/louis/Downloads/zxbasic/zxbasic/zxbasm -T -O0 GameOfLife.asm -o tzx/GameOfLifeBytes.tzx
 
-GameOfLifeBytes.bin: GameOfLife.asm
-	/home/louis/Downloads/zxbasic/zxbasic/zxbasm -O0 GameOfLife.asm -o GameOfLifeBytes.bin
+bin/GameOfLifeBytes.bin: GameOfLife.asm
+	/home/louis/Downloads/zxbasic/zxbasic/zxbasm -O0 GameOfLife.asm -o bin/GameOfLifeBytes.bin
 
-GameOfLife.tzx: GameOfLifeLoader.tzx GameOfLifeBytes.tzx
-	tzxmerge GameOfLifeLoader.tzx GameOfLifeBytes.tzx -o GameOfLife.tzx
+tzx/GameOfLifeText.tzx: GameOfLifeEditRulesText.txt
+	python3 TextConv.py GameOfLifeEditRulesText.txt GoLText tzx/GameOfLifeText.tzx
 
-GameOfLife.wav: GameOfLife.tzx
-	tape2wav GameOfLife.tzx GameOfLife.wav
+tzx/GameOfLife.tzx: tzx/GameOfLifeLoader.tzx tzx/GameOfLifeBytes.tzx tzx/GameOfLifeText.tzx
+	tzxmerge tzx/GameOfLifeLoader.tzx tzx/GameOfLifeBytes.tzx tzx/GameOfLifeText.tzx -o tzx/GameOfLife.tzx
 
-run: GameOfLife.tzx
-	fuse --no-sound --no-auto-load --tape GameOfLife.tzx
+wav/GameOfLife.wav: tzx/GameOfLife.tzx
+	tape2wav tzx/GameOfLife.tzx wav/GameOfLife.wav
 
-play: GameOfLife.wav
-	vlc GameOfLife.wav
+run: tzx/GameOfLife.tzx
+	fuse --no-sound --no-auto-load --tape tzx/GameOfLife.tzx
+
+play: wav/GameOfLife.wav
+	vlc wav/GameOfLife.wav
