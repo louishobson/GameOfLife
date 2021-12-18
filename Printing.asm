@@ -200,9 +200,9 @@ FILL_PIXEL_DATA:
 		FILL_PIXEL_DATA_INNER_LOOP:
 			ld		(hl),a
 			inc		hl
-		djnz	FILL_PIXEL_DATA_INNER_LOOP
-	dec		c
-	jr		nz,FILL_PIXEL_DATA_OUTER_LOOP
+			djnz	FILL_PIXEL_DATA_INNER_LOOP
+		dec		c
+		jr		nz,FILL_PIXEL_DATA_OUTER_LOOP
 
 	; Return
 	ret
@@ -225,9 +225,9 @@ FILL_ATTRIBUTE_DATA:
 		FILL_ATTRIBUTE_DATA_INNER_LOOP:
 			ld		(hl),a
 			inc		hl
-		djnz	FILL_ATTRIBUTE_DATA_INNER_LOOP
-	dec		c
-	jr		nz,FILL_ATTRIBUTE_DATA_OUTER_LOOP
+			djnz	FILL_ATTRIBUTE_DATA_INNER_LOOP
+		dec		c
+		jr		nz,FILL_ATTRIBUTE_DATA_OUTER_LOOP
 
 	; Return
 	ret
