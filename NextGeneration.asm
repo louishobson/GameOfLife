@@ -121,11 +121,16 @@ ACCUM_WORLD:
 	call	START+WRITE_WORLD_BIT
 
 	; If the byte counter is now 1, then we have finished the column.
-	; If the byte counter is now 0, then we write the column accumulator to memory (and set the byte counter to 8 implicitly).
+	; Otherwise we need to continue with this column.
+	; However if the byte counter is 0, we need to write the column accumulator to memory.
 	ld		a,b
 	cp		1
 	jr		z,ACCUM_WORLD_NEW_COLUMN
-	call	m,START+WRITE_WORLD_BYTE
+	jp		p,START+ACCUM_WORLD_SAME_COLUMN
+
+	; Write the column accumulator to memory and set the byte counter to 8
+    ld		(iy - 1),e
+    ld		b,8
 
 	; We are still working on the current column
 	ACCUM_WORLD_SAME_COLUMN:
@@ -163,8 +168,8 @@ ACCUM_WORLD:
 
 		; We are now done with this byte, so write it to memory and the screen.
 		; Set the byte counter back to 9, then resume accumulating.
-		call	START+WRITE_WORLD_BYTE
-		inc		b
+        ld		(iy - 1),e
+        ld		b,9
 
 		; If this is the end of the last row, return
 		ld		a,c
@@ -194,33 +199,30 @@ ACCUM_WORLD:
 	; Skip this column (all zeros)
 	ACCUM_WORLD_SKIP_COLUMN:
 
-		; Push the back accumulator onto the stack
+		; Push the back accumulator onto the stack and zero the back accumulator
 		push	bc
-
-		; Zero the back accumulator
 		ld		c,0
 
-		; Swap to update registers
+		; Swap to update registers and pop the back accumulator into hl
 		exx
-
-		; If we did not start a new row, we want to write the back bit to the column accumulator, and then write the accumulator to memory
-		ld		a,c
-		and		%11
 		pop		hl
-		call	nz,START+WRITE_WORLD_BIT
+
+		; If we did not just start a new row, write the last bit to the column accumulator.
+		; Then load the byte into memory.
 		ld		a,c
 		and		%11
-		call	nz,START+WRITE_WORLD_BYTE
-
-		; Decrement the column counter
-		dec		c
+		jr		z,ACCUM_WORLD_SKIP_COLUMN_NO_WRITE
+		call	START+WRITE_WORLD_BIT
+		ld		(iy - 1),e
+		ACCUM_WORLD_SKIP_COLUMN_NO_WRITE:
 
 		; Fill the column accumulator with the no-neighbors rule
 		ld		hl,RULES
 		ld		e,(hl)
 
-		; Set b to 1
-		ld		b,1
+		; Decrement the column counter and the byte counter to 1
+        dec		c
+        ld		b,1
 
 		; Jump to ACCUM_WORLD_LOAD_NEXT_COLUMN
 		jp		START+ACCUM_WORLD_LOAD_NEXT_COLUMN
@@ -256,83 +258,6 @@ WRITE_WORLD_BIT:
 	ld		e,l
 	ld		l,0
 	exx
-
-	; Return
-	ret
-
-
-
-
-
-; This part saves a byte back to the world, and also writes to the screen.
-; The byte is taken from the column accumulator, and written to (iy-1).
-; Has the byproduct of setting the byte counter to 8.
-WRITE_WORLD_BYTE:
-
-	; Write the column accumulator to memory
-	ld		(iy - 1),e
-
-	; Load 95 into a, and subtract the column counter.
-	; This gives us the offset from the start of screen attributes in memory divided by 8.
-	; Therefore we need to multiply it by 8.
-	; We load a into hl, and add in the screen offset divided by 8.
-	; We can then multiply hl by 8 to get the write offset.
-	ld		a,95
-	sub		c
-	ld		h,ATTRIBUTE_DATA_UPPER/8
-	ld		l,a
-	add		hl,hl
-	add		hl,hl
-	add		hl,hl
-
-	; Possibly flip the screen colors
-	ld		a,(COLOR_FLIP)
-	xor		e
-	ld		e,a
-
-	; Iterate over the bits in the column accumulator and set the attributes
-
-	sla		e
-	sbc		a,a
-	ld		(hl),a
-	inc		hl
-
-	sla		e
-    sbc		a,a
-    ld		(hl),a
-    inc		hl
-
-	sla		e
-    sbc		a,a
-    ld		(hl),a
-    inc		hl
-
-	sla		e
-    sbc		a,a
-    ld		(hl),a
-    inc		hl
-
-	sla		e
-    sbc		a,a
-    ld		(hl),a
-    inc		hl
-
-	sla		e
-    sbc		a,a
-    ld		(hl),a
-    inc		hl
-
-	sla		e
-    sbc		a,a
-    ld		(hl),a
-    inc		hl
-
-	sla		e
-    sbc		a,a
-    ld		(hl),a
-
-	; Set the byte counter to 8
-	ld		b,8
 
 	; Return
 	ret
