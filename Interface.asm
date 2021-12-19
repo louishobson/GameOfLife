@@ -11,14 +11,44 @@
 
 
 
-; Load some rules
-ld		hl,RULES+1
-ld		(hl),255
-ld		hl,RULES+10
-ld		(hl),255
+; This is the entry code.
+ENTRY_CODE:
 
-ld		hl,COLOR_FLIP
-ld		(hl),255
+	; Disable interrupts entirely
+	di
+
+	; Set ix to be WORLD1 and iy to be WORLD2
+	ld		ix,WORLD1
+	ld		iy,WORLD2
+
+	; Set color flipping to on
+	ld		hl,COLOR_FLIP
+    ld		(hl),255
+
+    ; Set the automatic timer to off
+    ld		hl,AUTO_GEN_TIMER
+    ld		(hl),0
+
+	; Load some rules
+    ld		hl,RULES+1
+    ld		(hl),255
+    inc		hl
+    ld		(hl),255
+    ld		hl,RULES+10
+    ld		(hl),255
+    inc		hl
+    ld		(hl),255
+
+    ; Load some world values
+    ld		(ix+0),%10000000
+    ld		(ix+3),%00000001
+    ld		(ix+92),%10000000
+    ld		(ix+95),%00000001
+
+	; Jump to the generation loop
+	jp		START+GENERATION_LOOP
+
+
 
 
 
@@ -41,9 +71,6 @@ EDIT_RULES:
 	; Show all rules
 	call	START+EDIT_RULES_SHOW_COLOUR_FLIP
 	call	START+EDIT_RULES_SHOW_RULES
-
-	di
-	halt
 
 
 
@@ -120,6 +147,212 @@ EDIT_RULES_SHOW_RULES:
 		; Print the rule then repeat the loop
 		call	START+PRINT_STRING
 		jr		EDIT_RULES_SHOW_RULES_LOOP
+
+
+
+
+; This part is the rendering loop.
+; You can set a timer to automatically produce new generations at a particular frequency, or step through them manually.
+GENERATION_LOOP:
+
+	; Display the world
+	call	START+DISPLAY_WORLD
+
+	; Initialize the key read loop
+	GENERATION_LOOP_INIT_LOOP:
+
+		; Load the timer
+		ld		a,(AUTO_GEN_TIMER)
+		ld		d,a
+		ld		e,0
+
+	; Loop while reading the keyboard
+	GENERATION_LOOP_READ_LOOP:
+
+		; Look for an enter key
+		GENERATION_LOOP_READ_LOOP_ENTER:
+
+			; Get the keypresses
+			ld		a,%10111111
+			ld		b,%00000001
+			call	START+GET_KEYBOARD_INPUT
+
+			; Jump to generation if the enter is being pressed
+			and		a
+			jr		nz,GENERATION_LOOP_NEXT_GEN
+
+		; Look for an E or R key
+		GENERATION_LOOP_READ_LOOP_E_OR_R:
+
+			; Get the keypresses
+			ld		a,%11111011
+			ld		b,%00001100
+			call	START+GET_KEYBOARD_INPUT
+
+			; Test for an R
+			GENERATION_LOOP_READ_LOOP_R:
+				push	af
+				and		%00001000
+				jr		z,GENERATION_LOOP_READ_LOOP_E
+
+				; Found an R, so rollback to the previous generation.
+				; Swap ix and iy and set the timer to 0.
+				; Then go back to the start of the generation loop.
+				push	ix
+				push	iy
+				pop		ix
+				pop		iy
+				ld		hl,AUTO_GEN_TIMER
+				ld		(hl),0
+				jr		GENERATION_LOOP
+
+			; Test for an E
+			GENERATION_LOOP_READ_LOOP_E:
+				pop		af
+				and		%00000100
+				jr		z,GENERATION_LOOP_READ_LOOP_NUMBERS
+
+			; Will enter edit mode at some point...
+
+		; Look for numbers
+		GENERATION_LOOP_READ_LOOP_NUMBERS:
+
+			; Get the keypresses
+			ld		a,%11110111
+            ld		b,%00011111
+            call	START+GET_KEYBOARD_INPUT
+
+            ; Load the auto timer address into hl
+            ld		hl,AUTO_GEN_TIMER
+
+            ; Look for each number in turn.
+            ; If a match is found, set the timer and loop.
+            GENERATION_LOOP_READ_LOOP_1:
+				rra
+				jr		nc,GENERATION_LOOP_READ_LOOP_2:
+				ld		(hl),0
+				jr		GENERATION_LOOP_INIT_LOOP
+			GENERATION_LOOP_READ_LOOP_2:
+				rra
+				jr		nc,GENERATION_LOOP_READ_LOOP_3:
+				ld		(hl),32
+				jr		GENERATION_LOOP_INIT_LOOP
+            GENERATION_LOOP_READ_LOOP_3:
+				rra
+				jr		nc,GENERATION_LOOP_READ_LOOP_4:
+				ld		(hl),16
+				jr		GENERATION_LOOP_INIT_LOOP
+            GENERATION_LOOP_READ_LOOP_4:
+				rra
+				jr		nc,GENERATION_LOOP_READ_LOOP_5:
+				ld		(hl),8
+				jr		GENERATION_LOOP_INIT_LOOP
+            GENERATION_LOOP_READ_LOOP_5:
+				rra
+				jr		nc,GENERATION_LOOP_READ_LOOP_NO_KEYS:
+				ld		(hl),4
+				jr		GENERATION_LOOP_INIT_LOOP
+
+		; No keys found
+		GENERATION_LOOP_READ_LOOP_NO_KEYS:
+
+			; If the timer is already 0, the timer is off so loop around
+			ld		a,d
+			and		a
+			jr		z,GENERATION_LOOP_READ_LOOP
+
+			; Otherwise decrement the timer and automatically jump to generation if the timer is 0
+			dec		de
+			ld		a,d
+			and		a
+			jr		nz,GENERATION_LOOP_READ_LOOP
+
+	; Produce the next generation
+	GENERATION_LOOP_NEXT_GEN:
+
+		; Produce the next generation
+		call	START+NEXT_GENERATION
+
+		; Loop back to getting keys
+		jr		GENERATION_LOOP_INIT_LOOP
+
+
+
+
+
+; This function reloads a world onto the screen.
+; The world pointed to by ix is loaded.
+DISPLAY_WORLD:
+
+	; Set hl to the position of the first screen attribute
+    ld		hl,ATTRIBUTE_DATA
+
+	; Loop through all bytes to display the world.
+	; Set b to count through the bytes.
+	ld		b,96
+	DISPLAY_WORLD_LOOP:
+
+		; Load the next byte into e.
+		; Possibly apply colour flipping.
+		ld		e,(ix+0)
+		ld		a,(COLOR_FLIP)
+		xor		e
+		ld		e,a
+
+		; Iterate over the bits in e and set the attributes
+		sla		e
+		sbc		a,a
+		ld		(hl),a
+		inc		hl
+
+		sla		e
+		sbc		a,a
+		ld		(hl),a
+		inc		hl
+
+		sla		e
+		sbc		a,a
+		ld		(hl),a
+		inc		hl
+
+		sla		e
+		sbc		a,a
+		ld		(hl),a
+		inc		hl
+
+		sla		e
+		sbc		a,a
+		ld		(hl),a
+		inc		hl
+
+		sla		e
+		sbc		a,a
+		ld		(hl),a
+		inc		hl
+
+		sla		e
+		sbc		a,a
+		ld		(hl),a
+		inc		hl
+
+		sla		e
+		sbc		a,a
+		ld		(hl),a
+		inc		hl
+
+		; Increment ix
+		inc 	ix
+
+		; Now loop to the next byte of the world
+		djnz	DISPLAY_WORLD_LOOP
+
+	; Reset ix
+	ld		bc,65536-96
+	add		ix,bc
+
+	; Return
+	ret
+
 
 
 
