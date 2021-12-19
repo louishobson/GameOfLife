@@ -14,9 +14,6 @@
 ; ix and iy are automatically swapped.
 NEXT_GENERATION:
 
-	; Disable interrupts
-	di
-
 	; Set b, the byte counter, to 9 so we can count bits
 	ld		b,9
 
@@ -53,9 +50,6 @@ NEXT_GENERATION:
 	push 	iy
 	pop		ix
 	pop		iy
-
-	; Enable interrupts
-	ei
 
 	; Return
 	ret
