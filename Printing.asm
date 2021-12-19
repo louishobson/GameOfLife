@@ -221,3 +221,33 @@ FILL_ATTRIBUTE_DATA:
 
 	; Return
 	ret
+
+
+
+
+; This function gets keys.
+; The groups should be in a, and the keys will be loaded to a.
+; A mask of the specific keys in the groups being searched should be loaded to b.
+; If keys are pressed, only when they are released will the function return.
+; Otherwise the function will not block.
+GET_KEYBOARD_INPUT:
+
+	; Get keys, invert the keypresses
+	in		a,(KEYBOARD_IN_ID)
+	cpl
+	and		b
+
+	; If there were no keys being pressed, return
+	ret		z
+
+	; Otherwise push af and loop while there are keys being pressed
+	push	af
+	GET_KEYBOARD_INPUT_WAIT:
+		in		a,(KEYBOARD_IN_ID)
+		cpl
+		and		b
+		jr		nz,GET_KEYBOARD_INPUT_WAIT
+
+	; Pop af and return
+	pop		af
+	ret
