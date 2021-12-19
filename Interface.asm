@@ -60,7 +60,7 @@ EDIT_RULES:
 	; Clear the screen
 	ld		a,0
 	call	START+FILL_PIXEL_DATA
-	ld		a,%00111000
+	ld		a,%01111000
 	call	START+FILL_ATTRIBUTE_DATA
 
 	; Write the menu text
@@ -71,6 +71,9 @@ EDIT_RULES:
 	; Show all rules
 	call	START+EDIT_RULES_SHOW_COLOUR_FLIP
 	call	START+EDIT_RULES_SHOW_RULES
+
+	; Halt... for now...
+	halt
 
 
 
@@ -195,24 +198,39 @@ GENERATION_LOOP:
 				and		%00001000
 				jr		z,GENERATION_LOOP_READ_LOOP_E
 
-				; Found an R, so rollback to the previous generation.
-				; Swap ix and iy and set the timer to 0.
-				; Then go back to the start of the generation loop.
-				push	ix
-				push	iy
-				pop		ix
-				pop		iy
-				ld		hl,AUTO_GEN_TIMER
-				ld		(hl),0
-				jr		GENERATION_LOOP
+				; Jump to editing the rules
+				jp		START+EDIT_RULES
 
 			; Test for an E
 			GENERATION_LOOP_READ_LOOP_E:
 				pop		af
 				and		%00000100
-				jr		z,GENERATION_LOOP_READ_LOOP_NUMBERS
+				jr		z,GENERATION_LOOP_READ_LOOP_B
 
-			; Will enter edit mode at some point...
+				; Jump to world edit mode...
+
+		; Look for a B key
+		GENERATION_LOOP_READ_LOOP_B:
+
+			; Get the keypresses
+			ld		a,%01111111
+			ld		b,%00010000
+			call	START+GET_KEYBOARD_INPUT
+
+			; Test for a B
+			and		a
+			jr		z,GENERATION_LOOP_READ_LOOP_NUMBERS
+
+			; Found a B, so rollback to the previous generation.
+			; Swap ix and iy and set the timer to 0.
+			; Then go back to the start of the generation loop.
+			push	ix
+			push	iy
+			pop		ix
+			pop		iy
+			ld		hl,AUTO_GEN_TIMER
+			ld		(hl),0
+			jr		GENERATION_LOOP
 
 		; Look for numbers
 		GENERATION_LOOP_READ_LOOP_NUMBERS:
@@ -274,7 +292,7 @@ GENERATION_LOOP:
 		call	START+NEXT_GENERATION
 
 		; Loop back to getting keys
-		jr		GENERATION_LOOP_INIT_LOOP
+		jr		GENERATION_LOOP
 
 
 
