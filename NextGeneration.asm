@@ -120,6 +120,9 @@ ACCUM_WORLD:
 	pop		hl
 	call	START+WRITE_WORLD_BIT
 
+	; Pop the middle bit
+	pop		hl
+
 	; If the byte counter is now 1, then we have finished the column.
 	; Otherwise we need to continue with this column.
 	; However if the byte counter is 0, we need to write the column accumulator to memory.
@@ -128,46 +131,34 @@ ACCUM_WORLD:
 	jr		z,ACCUM_WORLD_NEW_COLUMN
 	jp		p,START+ACCUM_WORLD_SAME_COLUMN
 
-	; Write the column accumulator to memory and set the byte counter to 8
+	; The byte counter is 0, so write the column accumulator to memory and set the byte counter to 8.
     ld		(iy - 1),e
     ld		b,8
 
 	; We are still working on the current column
 	ACCUM_WORLD_SAME_COLUMN:
 
-		; Pop the centre accumulator
-		pop		hl
-
 		; Swap to accum registers and return to accumulating
 		exx
-		jp		START+ACCUM_NEIGHBORS
+		jr		ACCUM_NEIGHBORS
 
 	; We have entered a new column
 	ACCUM_WORLD_NEW_COLUMN:
 
-		; We may also have a new row.
-		; We can detect this if the decremented column counter is a multiple of 4.
-		; Write the centre bit to the column accumulator if there is a new row
-		dec 	c
-		ld		a,c
-		and 	%11
-		pop		hl
-		call	z,START+WRITE_WORLD_BIT
-
-	; Load the next column
-	ACCUM_WORLD_LOAD_NEXT_COLUMN:
-
-		; Increment ix and iy
+		; Increment ix and iy and decrement c
 		inc		ix
 		inc		iy
+		dec 	c
 
-		; If this is not a new row, jump to column skip detection
+		; If this is not a new row, load the next column into registers
 		ld		a,c
 		and 	%11
-		jr		nz,ACCUM_WORLD_SKIP_DETECT
+		jr		nz,ACCUM_WORLD_LOAD_NEXT_COLUMN
 
+		; If we just finished a row, write the centre bit to the column accumulator.
 		; We are now done with this byte, so write it to memory and the screen.
 		; Set the byte counter back to 9, then resume accumulating.
+		call	START+WRITE_WORLD_BIT
         ld		(iy - 1),e
         ld		b,9
 
@@ -176,56 +167,19 @@ ACCUM_WORLD:
 		and		a
 		ret		z
 
-	; Possibly skip accumulation if top, middle and bottom bytes are 0
-	ACCUM_WORLD_SKIP_DETECT:
+	; Load the next column and continue accumulating.
+	ACCUM_WORLD_LOAD_NEXT_COLUMN:
 
 		; Swap to accum registers
-		exx
+        exx
 
 		; Update the top, middle and bottom bytes
 		ld		b,(ix - 4)
 		ld 		d,(ix + 0)
 		ld 		h,(ix + 4)
 
-		; If top, middle and bottom bytes are zero, and the centre accumulator is zero, we can skip the column.
-		; We want the centre accumulator to be zero, as we don't want any non-zero neighbors in this column.
-		xor		a
-		or		b
-		or		d
-		or		e
-		or		h
-		jr		nz,ACCUM_NEIGHBORS
-
-	; Skip this column (all zeros)
-	ACCUM_WORLD_SKIP_COLUMN:
-
-		; Push the back accumulator onto the stack and zero the back accumulator
-		push	bc
-		ld		c,0
-
-		; Swap to update registers and pop the back accumulator into hl
-		exx
-		pop		hl
-
-		; If we did not just start a new row, write the last bit to the column accumulator.
-		; Then load the byte into memory.
-		ld		a,c
-		and		%11
-		jr		z,ACCUM_WORLD_SKIP_COLUMN_NO_WRITE
-		call	START+WRITE_WORLD_BIT
-		ld		(iy - 1),e
-		ACCUM_WORLD_SKIP_COLUMN_NO_WRITE:
-
-		; Fill the column accumulator with the no-neighbors rule
-		ld		hl,RULES
-		ld		e,(hl)
-
-		; Decrement the column counter and the byte counter to 1
-        dec		c
-        ld		b,1
-
-		; Jump to ACCUM_WORLD_LOAD_NEXT_COLUMN
-		jp		START+ACCUM_WORLD_LOAD_NEXT_COLUMN
+		; Jump to accumulation
+		jr		ACCUM_NEIGHBORS
 
 
 
