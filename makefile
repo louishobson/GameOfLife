@@ -16,11 +16,11 @@ clean:
 tzx/GameOfLifeLoader.tzx: GameOfLifeLoader.tzx_
 	cp GameOfLifeLoader.tzx_ tzx/GameOfLifeLoader.tzx
 
-tzx/GameOfLifeBytes.tzx: GameOfLife.asm Printing.asm Macros.asm
-	/home/louis/Downloads/zxbasic/zxbasic/zxbasm -T -O0 GameOfLife.asm -o tzx/GameOfLifeBytes.tzx
+tzx/GameOfLifeBytes.tzx: Interface.asm NextGeneration.asm Printing.asm Macros.asm
+	/home/louis/Downloads/zxbasic/zxbasic/zxbasm -T -O0 Interface.asm -o tzx/GameOfLifeBytes.tzx
 
-bin/GameOfLifeBytes.bin: GameOfLife.asm Printing.asm Macros.asm
-	/home/louis/Downloads/zxbasic/zxbasic/zxbasm -O0 GameOfLife.asm -o bin/GameOfLifeBytes.bin
+bin/GameOfLifeBytes.bin: Interface.asm NextGeneration.asm Printing.asm Macros.asm
+	/home/louis/Downloads/zxbasic/zxbasic/zxbasm -O0 Interface.asm -o bin/GameOfLifeBytes.bin
 
 tzx/GameOfLife.tzx: tzx/GameOfLifeLoader.tzx tzx/GameOfLifeBytes.tzx
 	tzxmerge tzx/GameOfLifeLoader.tzx tzx/GameOfLifeBytes.tzx -o tzx/GameOfLife.tzx
