@@ -177,19 +177,19 @@ PRINT_STRING:
 
 
 ; This function fills the screen pixel data with the contents of a.
-; hl and bc are modified.
+; de and bc are modified.
 FILL_PIXEL_DATA:
 
-	; Set hl to PIXEL_DATA
-	ld		hl,PIXEL_DATA
+	; Set de to PIXEL_DATA
+	ld		de,PIXEL_DATA
 
 	; Clear the screen. Since there are $1800 bytes to write, we write 256 bytes $18 times.
 	ld		c,PIXEL_DATA_LENGTH_UPPER
 	FILL_PIXEL_DATA_OUTER_LOOP:
 		ld		b,256
 		FILL_PIXEL_DATA_INNER_LOOP:
-			ld		(hl),a
-			inc		hl
+			ld		(de),a
+			inc		de
 			djnz	FILL_PIXEL_DATA_INNER_LOOP
 		dec		c
 		jr		nz,FILL_PIXEL_DATA_OUTER_LOOP
@@ -202,19 +202,19 @@ FILL_PIXEL_DATA:
 
 
 ; This function fills the screen attribute data with the contents of a.
-; hl and bc are modified.
+; de and bc are modified.
 FILL_ATTRIBUTE_DATA:
 
 	; Set hl to ATTRIBUTE_DATA
-	ld		hl,ATTRIBUTE_DATA
+	ld		de,ATTRIBUTE_DATA
 
 	; Clear the screen. Since there are $0300 bytes to write, we write 256 bytes 3 times.
 	ld		c,ATTRIBUTE_DATA_LENGTH_UPPER
 	FILL_ATTRIBUTE_DATA_OUTER_LOOP:
 		ld		b,256
 		FILL_ATTRIBUTE_DATA_INNER_LOOP:
-			ld		(hl),a
-			inc		hl
+			ld		(de),a
+			inc		de
 			djnz	FILL_ATTRIBUTE_DATA_INNER_LOOP
 		dec		c
 		jr		nz,FILL_ATTRIBUTE_DATA_OUTER_LOOP
@@ -222,6 +222,29 @@ FILL_ATTRIBUTE_DATA:
 	; Return
 	ret
 
+
+
+; This function fills b bytes of the screen attribute data with the contents of a.
+; The starting position should be loaded in de.
+PARTIAL_FILL_ATTRIBUTE_DATA:
+
+	; Save a
+	push	af
+
+	; Set get the location of the first attribute
+	call	START+GET_ATTRIBUTE_LOCATION
+
+	; Reload a
+	pop		af
+
+	; Keep writing while b is non-zero
+	PARTIAL_FILL_ATTRIBUTE_DATA_LOOP:
+		ld		(de),a
+		inc		de
+		djnz	PARTIAL_FILL_ATTRIBUTE_DATA_LOOP
+
+	; Return
+	ret
 
 
 
