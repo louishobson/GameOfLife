@@ -292,6 +292,7 @@ PARTIAL_FILL_ATTRIBUTE_DATA:
 GET_KEYBOARD_INPUT:
 
 	; Get keys, invert the keypresses
+	cpl
 	in		a,(KEYBOARD_IN_ID)
 	cpl
 	and		b
