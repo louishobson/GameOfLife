@@ -77,6 +77,7 @@ EDIT_RULES:
 	call	START+PARTIAL_FILL_ATTRIBUTE_DATA
 
 	; Halt... for now...
+	di
 	halt
 
 
@@ -158,100 +159,106 @@ GENERATION_LOOP:
 		GENERATION_LOOP_READ_LOOP_ENTER:
 
 			; Get the keypresses
-			ld		a,%10111111
+			ld		a,%01000000
 			ld		b,%00000001
 			call	START+GET_KEYBOARD_INPUT
 
 			; Jump to generation if the enter is being pressed
 			and		a
-			jr		nz,GENERATION_LOOP_NEXT_GEN
+			jp		nz,START+GENERATION_LOOP_NEXT_GEN
 
-		; Look for an E or R key
-		GENERATION_LOOP_READ_LOOP_E_OR_R:
+		; Look for an E or R or T key
+		GENERATION_LOOP_READ_LOOP_E_R_T:
 
 			; Get the keypresses
-			ld		a,%11111011
-			ld		b,%00001100
+			ld		a,%00000100
+			ld		b,%00011100
 			call	START+GET_KEYBOARD_INPUT
+
+			; Test for an E
+			GENERATION_LOOP_READ_LOOP_E:
+				bit		2,a
+				jr		z,GENERATION_LOOP_READ_LOOP_R
+
+				; Jump to world edit mode...
 
 			; Test for an R
 			GENERATION_LOOP_READ_LOOP_R:
-				push	af
-				and		%00001000
-				jr		z,GENERATION_LOOP_READ_LOOP_E
+				bit		3,a
+				jr		z,GENERATION_LOOP_READ_LOOP_T
 
 				; Jump to editing the rules
 				jp		START+EDIT_RULES
 
-			; Test for an E
-			GENERATION_LOOP_READ_LOOP_E:
-				pop		af
-				and		%00000100
-				jr		z,GENERATION_LOOP_READ_LOOP_B
+			; Test for a T
+			GENERATION_LOOP_READ_LOOP_T:
+				bit		4,a
+				jr		z,GENERATION_LOOP_READ_LOOP_B_N_M
 
-				; Jump to world edit mode...
+				; Reset the timer and loop
+				ld		hl,AUTO_GEN_TIMER
+				ld		(hl),0
+				jp		START+GENERATION_LOOP_INIT_LOOP
 
-		; Look for a B key
-		GENERATION_LOOP_READ_LOOP_B:
+		; Look for a B, N or M key
+		GENERATION_LOOP_READ_LOOP_B_N_M:
 
 			; Get the keypresses
-			ld		a,%01111111
-			ld		b,%00010000
+			ld		a,%10000000
+			ld		b,%00011100
 			call	START+GET_KEYBOARD_INPUT
 
 			; Test for a B
-			and		a
-			jr		z,GENERATION_LOOP_READ_LOOP_NUMBERS
+			GENERATION_LOOP_READ_LOOP_B:
+				bit		4,a
+				jr		z,GENERATION_LOOP_READ_LOOP_N
 
-			; Found a B, so rollback to the previous generation.
-			; Swap ix and iy and set the timer to 0.
-			; Then go back to the start of the generation loop.
-			push	ix
-			push	iy
-			pop		ix
-			pop		iy
-			ld		hl,AUTO_GEN_TIMER
-			ld		(hl),0
-			jr		GENERATION_LOOP
+				; Found a B, so rollback to the previous generation.
+				; Swap ix and iy and set the timer to 0.
+				; Then go back to the start of the generation loop.
+				push	ix
+				push	iy
+				pop		ix
+				pop		iy
+				ld		hl,AUTO_GEN_TIMER
+				ld		(hl),0
+				jr		GENERATION_LOOP
+
+			; Test for a N
+			GENERATION_LOOP_READ_LOOP_N:
+				bit		3,a
+				jr		z,GENERATION_LOOP_READ_LOOP_M
+
+				; Found an n, so clear the screen and jump to editing...
+
+            ; Test for a M
+			GENERATION_LOOP_READ_LOOP_M:
+                bit		2,a
+				jr		z,GENERATION_LOOP_READ_LOOP_NUMBERS
+
+				; Swap colours
+				ld		a,(COLOR_FLIP)
+				cpl
+				ld		(COLOR_FLIP),a
+
+				; Re-render
+				call	START+DISPLAY_WORLD
 
 		; Look for numbers
 		GENERATION_LOOP_READ_LOOP_NUMBERS:
 
 			; Get the keypresses
-			ld		a,%11110111
+			ld		a,%00001000
             ld		b,%00011111
             call	START+GET_KEYBOARD_INPUT
 
-            ; Load the auto timer address into hl
-            ld		hl,AUTO_GEN_TIMER
+			; If no numbers are being pressed, jump
+			and		a
+			jr		z,GENERATION_LOOP_READ_LOOP_NO_KEYS
 
-            ; Look for each number in turn.
-            ; If a match is found, set the timer and loop.
-            GENERATION_LOOP_READ_LOOP_1:
-				rra
-				jr		nc,GENERATION_LOOP_READ_LOOP_2:
-				ld		(hl),0
-				jr		GENERATION_LOOP_INIT_LOOP
-			GENERATION_LOOP_READ_LOOP_2:
-				rra
-				jr		nc,GENERATION_LOOP_READ_LOOP_3:
-				ld		(hl),32
-				jr		GENERATION_LOOP_INIT_LOOP
-            GENERATION_LOOP_READ_LOOP_3:
-				rra
-				jr		nc,GENERATION_LOOP_READ_LOOP_4:
-				ld		(hl),16
-				jr		GENERATION_LOOP_INIT_LOOP
-            GENERATION_LOOP_READ_LOOP_4:
-				rra
-				jr		nc,GENERATION_LOOP_READ_LOOP_5:
-				ld		(hl),8
-				jr		GENERATION_LOOP_INIT_LOOP
-            GENERATION_LOOP_READ_LOOP_5:
-				rra
-				jr		nc,GENERATION_LOOP_READ_LOOP_NO_KEYS:
-				ld		(hl),1
-				jr		GENERATION_LOOP_INIT_LOOP
+			; Else set the timer to the number being pressed and loop.
+			ld		(AUTO_GEN_TIMER),a
+			jp		START+GENERATION_LOOP_INIT_LOOP
 
 		; No keys found
 		GENERATION_LOOP_READ_LOOP_NO_KEYS:
@@ -259,13 +266,13 @@ GENERATION_LOOP:
 			; If the timer is already 0, the timer is off so loop around
 			ld		a,d
 			and		a
-			jr		z,GENERATION_LOOP_READ_LOOP
+			jp		z,START+GENERATION_LOOP_READ_LOOP
 
 			; Otherwise decrement the timer and automatically jump to generation if the timer is 0
 			dec		de
 			ld		a,d
 			and		a
-			jr		nz,GENERATION_LOOP_READ_LOOP
+			jp		nz,START+GENERATION_LOOP_READ_LOOP
 
 	; Produce the next generation
 	GENERATION_LOOP_NEXT_GEN:
@@ -274,7 +281,7 @@ GENERATION_LOOP:
 		call	START+NEXT_GENERATION
 
 		; Loop back to getting keys
-		jr		GENERATION_LOOP
+		jp		START+GENERATION_LOOP
 
 
 
