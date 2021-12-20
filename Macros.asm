@@ -5,6 +5,14 @@
 ; The load position of the program
 #define START 60000
 
+; The position of the custom interrupt
+#define CUSTOM_INTERRUPT $e9e9
+#define CUSTOM_INTERRUPT_BYTE $e9
+
+; The position of the interrupt vector table
+#define INTERRUPT_VTABLE $e800
+#define INTERRUPT_VTABLE_UPPER $e8
+
 ; The position of the worlds.
 ; Each world consists of 24 rows of 4 bytes, making 96 bytes in total.
 ; There also needs to be padding of 4 zero bytes before and after each.
@@ -47,6 +55,9 @@
 
 ; The keyboard's id
 #define KEYBOARD_IN_ID $fe
+
+; The address of the frame counter
+#define FRAME_COUNTER 23672
 
 ; End of pragma once
 #endif
