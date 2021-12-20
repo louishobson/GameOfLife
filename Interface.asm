@@ -21,6 +21,10 @@ ENTRY_CODE:
 	ld		ix,WORLD1
 	ld		iy,WORLD2
 
+	; Set the edit rules cursor to 0
+	ld		hl,EDIT_RULES_CURSOR
+	ld		(hl),0
+
     ; Set the automatic timer to off
     ld		hl,AUTO_GEN_TIMER
     ld		(hl),0
@@ -62,17 +66,111 @@ EDIT_RULES:
 	ld		de,0
 	call	START+PRINT_STRING
 
+; Initialize the read loop.
+; hl stores the address in memory of the cursor position.
+EDIT_RULES_INIT_LOOP:
+
 	; Show all rules
 	call	START+EDIT_RULES_SHOW_RULES
 
-	ld		b,4
-	ld		de,$0413
-	ld		a,%00111000
-	call	START+PARTIAL_FILL_ATTRIBUTE_DATA
+	; Show the cursor
+	ld		a,%10111000
+	call	START+EDIT_RULES_SHOW_CURSOR
 
-	; Halt... for now...
-	di
-	halt
+	; Set hl to the cursor location
+    ld		hl,EDIT_RULES_CURSOR
+
+    ; Set bc to the address of the current rule
+    ld		b,RULES_UPPER
+    ld		c,(hl)
+
+; Start the read loop
+EDIT_RULES_READ_LOOP:
+
+	; Look for an enter key
+	EDIT_RULES_READ_LOOP_ENTER:
+
+		; Get the keypresses
+		ld		a,%01000000
+		ld		d,%00000001
+		call	START+GET_KEYBOARD_INPUT
+
+		; Jump away if not being pressed
+		and		a
+		jr		z,EDIT_RULES_READ_LOOP_Z_OR_X
+
+		; Change the setting
+		ld		a,(bc)
+		cpl
+		ld		(bc),a
+
+		; Loop around
+		jr		EDIT_RULES_INIT_LOOP
+
+	; Look for Z and X keys
+	EDIT_RULES_READ_LOOP_Z_OR_X:
+
+		; Get the keypresses
+		ld		a,%00000001
+		ld		d,%00000110
+		call	START+GET_KEYBOARD_INPUT
+
+		; Look for a Z
+		EDIT_RULES_READ_LOOP_Z:
+			bit		1,a
+			jr		z,EDIT_RULES_READ_LOOP_X
+
+			; Remove the cursor
+			ld		a,%01111000
+			call	START+EDIT_RULES_SHOW_CURSOR
+
+			; Decrement the cursor. If it is more than 18, set to 17
+			dec		(hl)
+			ld		a,(hl)
+			cp		255
+			jr		nz,EDIT_RULES_INIT_LOOP
+			ld		(hl),17
+			jr		EDIT_RULES_INIT_LOOP
+
+		; Look for an X
+        EDIT_RULES_READ_LOOP_X:
+        	bit		2,a
+			jr		z,EDIT_RULES_READ_LOOP_W_OR_E
+
+			; Remove the cursor
+            ld		a,%01111000
+            call	START+EDIT_RULES_SHOW_CURSOR
+
+			; Increment the cursor. If it exceeded 18, set it to 0
+			inc		(hl)
+			ld		a,(hl)
+			cp		18
+			jr		nz,EDIT_RULES_INIT_LOOP
+			ld		(hl),0
+			jr		EDIT_RULES_INIT_LOOP
+
+	; Look for a W or E key
+	EDIT_RULES_READ_LOOP_W_OR_E:
+
+		; Get the keypresses
+		ld		a,%00000100
+		ld		d,%00000110
+		call	START+GET_KEYBOARD_INPUT
+
+		; Test for an E
+		EDIT_RULES_READ_LOOP_E:
+			bit		2,a
+			jr		z,EDIT_RULES_READ_LOOP_W
+
+			; Jump to world edit mode...
+
+		; Test for a W
+		EDIT_RULES_READ_LOOP_W:
+			bit		1,a
+			jr		z,EDIT_RULES_READ_LOOP
+
+			; Jump to the generation loop
+			jr		GENERATION_LOOP
 
 
 
@@ -81,40 +179,25 @@ EDIT_RULES:
 ; Function to show the next generation settings
 EDIT_RULES_SHOW_RULES:
 
-	; Load the rules address into hl and push it.
+	; Load the rules address into hl
 	ld		hl,RULES
-	push	hl
 
 	; Set up the initial writing position.
-	; The column is always $13, and the row varies.
-	; bc will point to memory storing the correct row.
-	; Also push bc
-	ld		bc,START+EDIT_RULES_ROW_POSITIONS+1
-	push	bc
-	ld		e,$13
+	; The column is always 20, and the row varies starting as 3.
+	ld		d,3
+	ld		e,20
 
 	; Loop over showing the rules
+	ld		b,18
 	EDIT_RULES_SHOW_RULES_LOOP:
 
-		; Pop back bc and hl
-		pop		bc
-		pop		hl
-
-		; Load the next row to write to.
-		; If it is 0, then we are done, otherwise increment bc and store the row number in d
-		ld		a,(bc)
-		and		a
-		ret		z
-		inc		bc
-		ld		d,a
-
-		; Load the rule into a then increment hl
-		ld		a,(hl)
-		inc		hl
-
-		; Push hl and bc back to the stack
+		; Push cb, de and hl
+		push 	bc
+		push	de
 		push	hl
-		push	bc
+
+		; Load the rule into a
+        ld		a,(hl)
 
 		; Assume the rule is dead, and change if proved otherwise.
 		and		a
@@ -123,9 +206,47 @@ EDIT_RULES_SHOW_RULES:
 		ld		hl,START+EDIT_RULES_TEXT_LIVE
 		EDIT_RULES_SHOW_RULES_DEAD:
 
-		; Print the rule then repeat the loop
+		; Print the rule
 		call	START+PRINT_STRING
-		jr		EDIT_RULES_SHOW_RULES_LOOP
+
+		; Pop bc, de and hl
+		pop		hl
+		pop		de
+		pop		bc
+
+		; Increment hl and d, then loop
+		inc		hl
+		inc 	d
+		djnz	EDIT_RULES_SHOW_RULES_LOOP
+
+	; Return
+	ret
+
+
+
+
+
+; This function draws the cursor in the edit rules menu.
+; a should be set to the cursor attribute.
+; de is modified.
+EDIT_RULES_SHOW_CURSOR:
+
+	; Preserve a
+	push	af
+
+	; Get the current rule being modified, then the cursor position.
+	ld		a,(EDIT_RULES_CURSOR)
+	add		a,3
+	ld		d,a
+	ld		e,20
+
+	; Color the cursor.
+	pop		af
+	ld		b,4
+	call	START+PARTIAL_FILL_ATTRIBUTE_DATA
+
+	; Return
+	ret
 
 
 
@@ -135,16 +256,23 @@ EDIT_RULES_SHOW_RULES:
 ; You can set a timer to automatically produce new generations at a particular frequency, or step through them manually.
 GENERATION_LOOP:
 
-	; Display the world
-	call	START+DISPLAY_WORLD
+	; Clear the pixel data
+	ld		a,0
+	call	START+FILL_PIXEL_DATA
 
-	; Initialize the key read loop
+	; Initialize the key read loop.
+	; hl holds the address of the auto gen timer.
+	; bc holds the timer, which is reset on loop initialization.
+	; In particular, b is set to the timer value, and c to 0, so the timer length is effectively multiplied by 256.
 	GENERATION_LOOP_INIT_LOOP:
 
+		; Display the world
+		call	START+DISPLAY_WORLD
+
 		; Load the timer
-		ld		a,(AUTO_GEN_TIMER)
-		ld		d,a
-		ld		e,0
+		ld		hl,AUTO_GEN_TIMER
+		ld		b,(hl)
+		ld		c,0
 
 	; Loop while reading the keyboard
 	GENERATION_LOOP_READ_LOOP:
@@ -154,19 +282,23 @@ GENERATION_LOOP:
 
 			; Get the keypresses
 			ld		a,%01000000
-			ld		b,%00000001
+			ld		d,%00000001
 			call	START+GET_KEYBOARD_INPUT
 
-			; Jump to generation if the enter is being pressed
+			; Test for the key
 			and		a
-			jp		nz,START+GENERATION_LOOP_NEXT_GEN
+			jr		z,GENERATION_LOOP_READ_LOOP_E_R_T
+
+			; Generate the next world and loop
+			call	START+NEXT_GENERATION
+			jr		GENERATION_LOOP_INIT_LOOP
 
 		; Look for an E or R or T key
 		GENERATION_LOOP_READ_LOOP_E_R_T:
 
 			; Get the keypresses
 			ld		a,%00000100
-			ld		b,%00011100
+			ld		d,%00011100
 			call	START+GET_KEYBOARD_INPUT
 
 			; Test for an E
@@ -181,56 +313,47 @@ GENERATION_LOOP:
 				bit		3,a
 				jr		z,GENERATION_LOOP_READ_LOOP_T
 
-				; Jump to editing the rules
+				; Reset the timer and jump to editing the rules
+                ld		(hl),0
 				jp		START+EDIT_RULES
 
 			; Test for a T
 			GENERATION_LOOP_READ_LOOP_T:
 				bit		4,a
-				jr		z,GENERATION_LOOP_READ_LOOP_B_N
+				jr		z,GENERATION_LOOP_READ_LOOP_B
 
 				; Reset the timer and loop
-				ld		hl,AUTO_GEN_TIMER
 				ld		(hl),0
 				jp		START+GENERATION_LOOP_INIT_LOOP
 
-		; Look for a B or N key
-		GENERATION_LOOP_READ_LOOP_B_N:
+		; Look for a B key
+		GENERATION_LOOP_READ_LOOP_B:
 
 			; Get the keypresses
 			ld		a,%10000000
-			ld		b,%00011100
+			ld		d,%00010000
 			call	START+GET_KEYBOARD_INPUT
 
 			; Test for a B
-			GENERATION_LOOP_READ_LOOP_B:
-				bit		4,a
-				jr		z,GENERATION_LOOP_READ_LOOP_N
+			bit		4,a
+			jr		z,GENERATION_LOOP_READ_LOOP_NUMBERS
 
-				; Found a B, so rollback to the previous generation.
-				; Swap ix and iy and set the timer to 0.
-				; Then go back to the start of the generation loop.
-				push	ix
-				push	iy
-				pop		ix
-				pop		iy
-				ld		hl,AUTO_GEN_TIMER
-				ld		(hl),0
-				jr		GENERATION_LOOP
-
-			; Test for a N
-			GENERATION_LOOP_READ_LOOP_N:
-				bit		3,a
-				jr		z,GENERATION_LOOP_READ_LOOP_NUMBERS
-
-				; Found an n, so clear the screen and jump to editing...
+			; Found a B, so rollback to the previous generation.
+			; Swap ix and iy and set the timer to 0.
+			; Then go back to the start of the generation loop.
+			push	ix
+			push	iy
+			pop		ix
+			pop		iy
+			ld		(hl),0
+			jr		GENERATION_LOOP_INIT_LOOP
 
 		; Look for numbers
 		GENERATION_LOOP_READ_LOOP_NUMBERS:
 
 			; Get the keypresses
 			ld		a,%00001000
-            ld		b,%00011111
+            ld		d,%00011111
             call	START+GET_KEYBOARD_INPUT
 
 			; If no numbers are being pressed, jump
@@ -238,31 +361,26 @@ GENERATION_LOOP:
 			jr		z,GENERATION_LOOP_READ_LOOP_NO_KEYS
 
 			; Else set the timer to the number being pressed and loop.
-			ld		(AUTO_GEN_TIMER),a
+			ld		(hl),a
 			jp		START+GENERATION_LOOP_INIT_LOOP
 
 		; No keys found
 		GENERATION_LOOP_READ_LOOP_NO_KEYS:
 
 			; If the timer is already 0, the timer is off so loop around
-			ld		a,d
+			ld		a,b
 			and		a
 			jp		z,START+GENERATION_LOOP_READ_LOOP
 
 			; Otherwise decrement the timer and automatically jump to generation if the timer is 0
-			dec		de
-			ld		a,d
+			dec		bc
+			ld		a,b
 			and		a
 			jp		nz,START+GENERATION_LOOP_READ_LOOP
 
-	; Produce the next generation
-	GENERATION_LOOP_NEXT_GEN:
-
-		; Produce the next generation
-		call	START+NEXT_GENERATION
-
-		; Loop back to getting keys
-		jp		START+GENERATION_LOOP
+			; Otherwise produce the next generation and return to getting keys
+			call	START+NEXT_GENERATION
+			jp		START+GENERATION_LOOP_INIT_LOOP
 
 
 
@@ -372,6 +490,3 @@ EDIT_RULES_TEXT_LIVE:
 
 EDIT_RULES_TEXT_DEAD:
 	defb	"Dead",0
-
-EDIT_RULES_ROW_POSITIONS:
-	defb	0,4,5,6,7,8,9,10,11,12,15,16,17,18,19,20,21,22,23,0
