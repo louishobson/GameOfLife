@@ -289,10 +289,14 @@ PARTIAL_FILL_ATTRIBUTE_DATA:
 ; A mask of the specific keys in the groups being searched should be loaded to b.
 ; If keys are pressed, only when they are released will the function return.
 ; Otherwise the function will not block.
+; c will be modified.
 GET_KEYBOARD_INPUT:
 
-	; Get keys, invert the keypresses
+	; Complement the group and save it in c
 	cpl
+	ld		c,a
+
+	; Get the keypress and mask with b
 	in		a,(KEYBOARD_IN_ID)
 	cpl
 	and		b
@@ -300,14 +304,17 @@ GET_KEYBOARD_INPUT:
 	; If there were no keys being pressed, return
 	ret		z
 
-	; Otherwise push af and loop while there are keys being pressed
+	; Push the current a
 	push	af
+
+	; Otherwise switch back to the original while the keys are being pressed
 	GET_KEYBOARD_INPUT_WAIT:
+		ld		a,c
 		in		a,(KEYBOARD_IN_ID)
 		cpl
 		and		b
 		jr		nz,GET_KEYBOARD_INPUT_WAIT
 
-	; Pop af and return
+	; Pop the original a and return
 	pop		af
 	ret
