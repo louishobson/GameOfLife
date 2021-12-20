@@ -48,7 +48,6 @@ SETUP_EMPTY_INTERRUPT:
 
 ; This function takes a character code to print stored in a.
 ; It sets hl to the address in memory of the position of the bitmap for that character.
-; Modifies bc.
 GET_BITMAP_LOCATION:
 
 	; Load a into hl
@@ -61,8 +60,9 @@ GET_BITMAP_LOCATION:
 	add		hl,hl
 
 	; Add the offset to the character bitmaps to hl
-	ld		bc,CHAR_BITMAPS
-	add		hl,bc
+	ld		a,h
+	add		a,CHAR_BITMAPS_UPPER
+	ld		h,a
 
 	; Return
 	ret
@@ -144,6 +144,7 @@ GET_ATTRIBUTE_LOCATION:
 ; This function prints a string.
 ; The location in memory of the start of the string is hl.
 ; The coordinates on the screen is de (see GET_PIXEL_LOCATION).
+; Modifies bc
 PRINT_STRING:
 
 	; Push de and call GET_PIXEL_LOCATION
@@ -241,7 +242,7 @@ FILL_PIXEL_DATA:
 ; de and bc are modified.
 FILL_ATTRIBUTE_DATA:
 
-	; Set hl to ATTRIBUTE_DATA
+	; Set de to ATTRIBUTE_DATA
 	ld		de,ATTRIBUTE_DATA
 
 	; Clear the screen. Since there are $0300 bytes to write, we write 256 bytes 3 times.
@@ -286,20 +287,20 @@ PARTIAL_FILL_ATTRIBUTE_DATA:
 
 ; This function gets keys.
 ; The groups should be in a, and the keys will be loaded to a.
-; A mask of the specific keys in the groups being searched should be loaded to b.
+; A mask of the specific keys in the groups being searched should be loaded to d.
 ; If keys are pressed, only when they are released will the function return.
 ; Otherwise the function will not block.
-; c will be modified.
+; de will be modified.
 GET_KEYBOARD_INPUT:
 
-	; Complement the group and save it in c
+	; Complement the group and save it in l
 	cpl
-	ld		c,a
+	ld		e,a
 
 	; Get the keypress and mask with b
 	in		a,(KEYBOARD_IN_ID)
 	cpl
-	and		b
+	and		d
 
 	; If there were no keys being pressed, return
 	ret		z
@@ -309,10 +310,10 @@ GET_KEYBOARD_INPUT:
 
 	; Otherwise switch back to the original while the keys are being pressed
 	GET_KEYBOARD_INPUT_WAIT:
-		ld		a,c
+		ld		a,e
 		in		a,(KEYBOARD_IN_ID)
 		cpl
-		and		b
+		and		d
 		jr		nz,GET_KEYBOARD_INPUT_WAIT
 
 	; Pop the original a and return
