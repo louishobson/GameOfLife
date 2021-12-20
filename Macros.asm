@@ -34,8 +34,12 @@
 ; The fastest is 1, and off is 256 (equals 0).
 #define AUTO_GEN_TIMER 62738
 
+; The current position of the cursor in the edit rules menu.
+#define	EDIT_RULES_CURSOR 62739
+
 ; Define the position of the character bitmaps in memory.
 #define CHAR_BITMAPS $3c00
+#define CHAR_BITMAPS_UPPER $3c
 
 ; Define the position of the pixel data in memory, and the length of the data.
 #define PIXEL_DATA $4000
