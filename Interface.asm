@@ -21,10 +21,6 @@ ENTRY_CODE:
 	ld		ix,WORLD1
 	ld		iy,WORLD2
 
-	; Set color flipping to on
-	ld		hl,COLOR_FLIP
-    ld		(hl),255
-
     ; Set the automatic timer to off
     ld		hl,AUTO_GEN_TIMER
     ld		(hl),0
@@ -47,8 +43,6 @@ ENTRY_CODE:
 
 	; Jump to the generation loop
 	jp		START+GENERATION_LOOP
-
-
 
 
 
@@ -193,15 +187,15 @@ GENERATION_LOOP:
 			; Test for a T
 			GENERATION_LOOP_READ_LOOP_T:
 				bit		4,a
-				jr		z,GENERATION_LOOP_READ_LOOP_B_N_M
+				jr		z,GENERATION_LOOP_READ_LOOP_B_N
 
 				; Reset the timer and loop
 				ld		hl,AUTO_GEN_TIMER
 				ld		(hl),0
 				jp		START+GENERATION_LOOP_INIT_LOOP
 
-		; Look for a B, N or M key
-		GENERATION_LOOP_READ_LOOP_B_N_M:
+		; Look for a B or N key
+		GENERATION_LOOP_READ_LOOP_B_N:
 
 			; Get the keypresses
 			ld		a,%10000000
@@ -227,22 +221,9 @@ GENERATION_LOOP:
 			; Test for a N
 			GENERATION_LOOP_READ_LOOP_N:
 				bit		3,a
-				jr		z,GENERATION_LOOP_READ_LOOP_M
-
-				; Found an n, so clear the screen and jump to editing...
-
-            ; Test for a M
-			GENERATION_LOOP_READ_LOOP_M:
-                bit		2,a
 				jr		z,GENERATION_LOOP_READ_LOOP_NUMBERS
 
-				; Swap colours
-				ld		a,(COLOR_FLIP)
-				cpl
-				ld		(COLOR_FLIP),a
-
-				; Re-render
-				call	START+DISPLAY_WORLD
+				; Found an n, so clear the screen and jump to editing...
 
 		; Look for numbers
 		GENERATION_LOOP_READ_LOOP_NUMBERS:
@@ -302,11 +283,9 @@ DISPLAY_WORLD:
 	ld		b,96
 	DISPLAY_WORLD_LOOP:
 
-		; Load the next byte into e.
-		; Possibly apply colour flipping.
-		ld		e,(ix+0)
-		ld		a,(COLOR_FLIP)
-		xor		e
+		; Load the next byte into e and complement it.
+		ld		a,(ix+0)
+		cpl
 		ld		e,a
 
 		; Iterate over the bits in e and set the attributes
