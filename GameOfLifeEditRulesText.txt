@@ -1,24 +1,21 @@
 
 EDIT RULESET
 
-LIVE CELLS:
-With 0 neighbours:
-With 1 neighbours:
-With 2 neighbours:
-With 3 neighbours:
-With 4 neighbours:
-With 5 neighbours:
-With 6 neighbours:
-With 7 neighbours:
-With 8 neighbours:
-
-DEAD CELLS:
-With 0 neighbours:
-With 1 neighbours:
-With 2 neighbours:
-With 3 neighbours:
-With 4 neighbours:
-With 5 neighbours:
-With 6 neighbours:
-With 7 neighbours:
-With 8 neighbours:
+Dead, 0 neighbours:
+Dead, 1 neighbours:
+Dead, 2 neighbours:
+Dead, 3 neighbours:
+Dead, 4 neighbours:
+Dead, 5 neighbours:
+Dead, 6 neighbours:
+Dead, 7 neighbours:
+Dead, 8 neighbours:
+Live, 0 neighbours:
+Live, 1 neighbours:
+Live, 2 neighbours:
+Live, 3 neighbours:
+Live, 4 neighbours:
+Live, 5 neighbours:
+Live, 6 neighbours:
+Live, 7 neighbours:
+Live, 8 neighbours:
