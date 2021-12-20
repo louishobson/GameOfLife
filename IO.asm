@@ -9,6 +9,42 @@
 
 
 
+; This function sets up the an empty interrupt.
+SETUP_EMPTY_INTERRUPT:
+
+	; Disable interrupts
+	di
+
+	; Load the vector table with the interrupt position.
+	ld		a,CUSTOM_INTERRUPT_BYTE
+	ld		b,0
+	ld		hl,INTERRUPT_VTABLE
+	SETUP_EMPTY_INTERRUPT_VTABLE_LOOP:
+		ld		(hl),a
+		inc		hl
+		djnz	SETUP_EMPTY_INTERRUPT_VTABLE_LOOP
+	ld	(hl),a
+
+	; Load the interrupt. It will simply enable interrupts and return.
+	ld		hl,CUSTOM_INTERRUPT
+	ld		(hl),$fb
+	inc		hl
+	ld		(hl),$ed
+	inc		hl
+	ld		(hl),$4d
+
+	; Set the interrupt register
+	ld		a,INTERRUPT_VTABLE_UPPER
+	ld		i,a
+
+	; Enable interrupts in mode 2 and return
+	im		2
+	ei
+	ret
+
+
+
+
 
 ; This function takes a character code to print stored in a.
 ; It sets hl to the address in memory of the position of the bitmap for that character.
