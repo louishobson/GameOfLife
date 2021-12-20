@@ -30,14 +30,9 @@
 #define RULES 62720
 #define RULES_UPPER $f5
 
-; A toggle for swapping alive and dead colors.
-; Set to 0 for dead as black, and white as alive.
-; Set to 255 for dead as white, and alive as black.
-#define COLOR_FLIP 62738
-
 ; The current timer for automatic generation switching.
 ; The fastest is 1, and off is 256 (equals 0).
-#define AUTO_GEN_TIMER 62739
+#define AUTO_GEN_TIMER 62738
 
 ; Define the position of the character bitmaps in memory.
 #define CHAR_BITMAPS $3c00
