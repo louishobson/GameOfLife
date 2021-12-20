@@ -14,8 +14,8 @@
 ; This is the entry code.
 ENTRY_CODE:
 
-	; Disable interrupts entirely
-	di
+	; Load the empty interrupt
+	call	START+SETUP_EMPTY_INTERRUPT
 
 	; Set ix to be WORLD1 and iy to be WORLD2
 	ld		ix,WORLD1
@@ -69,34 +69,15 @@ EDIT_RULES:
 	call	START+PRINT_STRING
 
 	; Show all rules
-	call	START+EDIT_RULES_SHOW_COLOUR_FLIP
 	call	START+EDIT_RULES_SHOW_RULES
+
+	ld		b,4
+	ld		de,$0413
+	ld		a,%00111000
+	call	START+PARTIAL_FILL_ATTRIBUTE_DATA
 
 	; Halt... for now...
 	halt
-
-
-
-
-
-; Function to show the colour flip setting
-EDIT_RULES_SHOW_COLOUR_FLIP:
-
-	; Get the colour flip setting.
-	; Assume the colour is flipped, and change if proved otherwise.
-	ld		a,(COLOR_FLIP)
-	and		a
-	ld		hl,START+EDIT_RULES_TEXT_BLACK
-	jr		nz,EDIT_RULES_SHOW_COLOUR_FLIP_IS_FLIPPED
-	ld		hl,START+EDIT_RULES_TEXT_WHITE
-	EDIT_RULES_SHOW_COLOUR_FLIP_IS_FLIPPED:
-
-	; Load the screen position and write.
-	ld		de,$0112
-	call	START+PRINT_STRING
-
-	; Return
-	ret
 
 
 
@@ -150,6 +131,7 @@ EDIT_RULES_SHOW_RULES:
 		; Print the rule then repeat the loop
 		call	START+PRINT_STRING
 		jr		EDIT_RULES_SHOW_RULES_LOOP
+
 
 
 
@@ -268,7 +250,7 @@ GENERATION_LOOP:
             GENERATION_LOOP_READ_LOOP_5:
 				rra
 				jr		nc,GENERATION_LOOP_READ_LOOP_NO_KEYS:
-				ld		(hl),4
+				ld		(hl),1
 				jr		GENERATION_LOOP_INIT_LOOP
 
 		; No keys found
@@ -301,6 +283,9 @@ GENERATION_LOOP:
 ; This function reloads a world onto the screen.
 ; The world pointed to by ix is loaded.
 DISPLAY_WORLD:
+
+	; Wait for the frame to write
+	halt
 
 	; Set hl to the position of the first screen attribute
     ld		hl,ATTRIBUTE_DATA
@@ -375,12 +360,11 @@ DISPLAY_WORLD:
 
 
 
-
 ; Include the next generation code
 #include "NextGeneration.asm"
 
-; Include Printing.asm
-#include "Printing.asm"
+; Include IO.asm
+#include "IO.asm"
 
 
 
