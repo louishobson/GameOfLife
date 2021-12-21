@@ -45,8 +45,7 @@ ENTRY_CODE:
     ld		(ix+92),%10000000
     ld		(ix+95),%00000001
 
-	; Jump to the generation loop
-	jp		START+GENERATION_LOOP
+	; Jump to editing rules (automatically)
 
 
 
@@ -68,17 +67,18 @@ EDIT_RULES:
 
 ; Initialize the read loop.
 ; hl stores the address in memory of the cursor position.
+; bc stores the address in memory of the current rule being modified.
 EDIT_RULES_INIT_LOOP:
 
 	; Show all rules
 	call	START+EDIT_RULES_SHOW_RULES
 
+	; Set hl to the cursor location
+    ld		hl,EDIT_RULES_CURSOR
+
 	; Show the cursor
 	ld		a,%10111000
 	call	START+EDIT_RULES_SHOW_CURSOR
-
-	; Set hl to the cursor location
-    ld		hl,EDIT_RULES_CURSOR
 
     ; Set bc to the address of the current rule
     ld		b,RULES_UPPER
@@ -87,59 +87,35 @@ EDIT_RULES_INIT_LOOP:
 ; Start the read loop
 EDIT_RULES_READ_LOOP:
 
-	; Look for an enter key
-	EDIT_RULES_READ_LOOP_ENTER:
+	; Look for an enter or L key
+	EDIT_RULES_READ_LOOP_ENTER_OR_L:
 
 		; Get the keypresses
 		ld		a,%01000000
-		ld		d,%00000001
+		ld		d,%00000011
 		call	START+GET_KEYBOARD_INPUT
 
-		; Jump away if not being pressed
-		and		a
-		jr		z,EDIT_RULES_READ_LOOP_Z_OR_X
+		; Test for enter
+		EDIT_RULES_READ_LOOP_ENTER:
+			bit		0,a
+			jr		z,EDIT_RULES_READ_LOOP_L
 
-		; Change the setting
-		ld		a,(bc)
-		cpl
-		ld		(bc),a
+			; Change the setting
+			ld		a,(bc)
+			cpl
+			ld		(bc),a
 
-		; Loop around
-		jr		EDIT_RULES_INIT_LOOP
-
-	; Look for Z and X keys
-	EDIT_RULES_READ_LOOP_Z_OR_X:
-
-		; Get the keypresses
-		ld		a,%00000001
-		ld		d,%00000110
-		call	START+GET_KEYBOARD_INPUT
-
-		; Look for a Z
-		EDIT_RULES_READ_LOOP_Z:
-			bit		1,a
-			jr		z,EDIT_RULES_READ_LOOP_X
-
-			; Remove the cursor
-			ld		a,%01111000
-			call	START+EDIT_RULES_SHOW_CURSOR
-
-			; Decrement the cursor. If it is more than 18, set to 17
-			dec		(hl)
-			ld		a,(hl)
-			cp		255
-			jr		nz,EDIT_RULES_INIT_LOOP
-			ld		(hl),17
+			; Loop around
 			jr		EDIT_RULES_INIT_LOOP
 
-		; Look for an X
-        EDIT_RULES_READ_LOOP_X:
-        	bit		2,a
-			jr		z,EDIT_RULES_READ_LOOP_W_OR_E
+		; Test for L
+        EDIT_RULES_READ_LOOP_L:
+        	bit		1,a
+        	jr		z,EDIT_RULES_READ_LOOP_P
 
-			; Remove the cursor
-            ld		a,%01111000
-            call	START+EDIT_RULES_SHOW_CURSOR
+        	; Remove the cursor
+			ld		a,%01111000
+			call	START+EDIT_RULES_SHOW_CURSOR
 
 			; Increment the cursor. If it exceeded 18, set it to 0
 			inc		(hl)
@@ -148,6 +124,30 @@ EDIT_RULES_READ_LOOP:
 			jr		nz,EDIT_RULES_INIT_LOOP
 			ld		(hl),0
 			jr		EDIT_RULES_INIT_LOOP
+
+	; Look for P key
+	EDIT_RULES_READ_LOOP_P:
+
+		; Get the keypresses
+		ld		a,%00100000
+		ld		d,%00000001
+		call	START+GET_KEYBOARD_INPUT
+
+		; Look for a P
+		and		a
+		jr		z,EDIT_RULES_READ_LOOP_W_OR_E
+
+		; Remove the cursor
+		ld		a,%01111000
+		call	START+EDIT_RULES_SHOW_CURSOR
+
+		; Decrement the cursor. If it is more than 18, set to 17
+		dec		(hl)
+		ld		a,(hl)
+		cp		255
+		jr		nz,EDIT_RULES_INIT_LOOP
+		ld		(hl),17
+		jr		EDIT_RULES_INIT_LOOP
 
 	; Look for a W or E key
 	EDIT_RULES_READ_LOOP_W_OR_E:
@@ -228,6 +228,7 @@ EDIT_RULES_SHOW_RULES:
 
 ; This function draws the cursor in the edit rules menu.
 ; a should be set to the cursor attribute.
+; Expects hl to be set to the address of the cursor.
 ; de is modified.
 EDIT_RULES_SHOW_CURSOR:
 
@@ -235,7 +236,7 @@ EDIT_RULES_SHOW_CURSOR:
 	push	af
 
 	; Get the current rule being modified, then the cursor position.
-	ld		a,(EDIT_RULES_CURSOR)
+	ld		a,(hl)
 	add		a,3
 	ld		d,a
 	ld		e,20
