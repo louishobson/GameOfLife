@@ -16,9 +16,9 @@
 ; The position of the worlds.
 ; Each world consists of 24 rows of 4 bytes, making 96 bytes in total.
 ; There also needs to be padding of 4 zero bytes before and after each.
-; Therefore if we can set the worlds 100 bytes apart, so that they share some padding.
-#define WORLD1 62520
-#define WORLD2 62620
+; Note that both addresses have their lower byte as 0.
+#define WORLD1 62208
+#define WORLD2 62464
 
 ; The position of the rule set.
 ; Rather than packing the rule set, we just store 18 booleans as bytes.
@@ -26,7 +26,7 @@
 ; True means alive in the next generation, false means dead.
 ; The first 9 bytes define the rules for a living cell with 0 through 8 neighbors.
 ; The second 9 bytes define the same for a dead cell.
-; Note that 62720 = 0xf500 in hex, so to get a rule with a number of neighbors, we load the number of neighbors into the bottom byte of the address.
+; Note that the lower byte of the address is 0.
 #define RULES 62720
 #define RULES_UPPER $f5
 
@@ -54,9 +54,6 @@
 
 ; The keyboard's id
 #define KEYBOARD_IN_ID $fe
-
-; The address of the frame counter
-#define FRAME_COUNTER 23672
 
 ; End of pragma once
 #endif
