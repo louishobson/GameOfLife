@@ -143,9 +143,7 @@ EDIT_RULES_READ_LOOP:
 
 		; Decrement the cursor. If it is more than 18, set to 17
 		dec		(hl)
-		ld		a,(hl)
-		cp		255
-		jr		nz,EDIT_RULES_INIT_LOOP
+		jp		p,START+EDIT_RULES_INIT_LOOP
 		ld		(hl),17
 		jr		EDIT_RULES_INIT_LOOP
 
@@ -325,7 +323,7 @@ GENERATION_LOOP:
 
 				; Reset the timer and loop
 				ld		(hl),0
-				jp		START+GENERATION_LOOP_INIT_LOOP
+				jr		GENERATION_LOOP_INIT_LOOP
 
 		; Look for a B key
 		GENERATION_LOOP_READ_LOOP_B:
@@ -363,7 +361,7 @@ GENERATION_LOOP:
 
 			; Else set the timer to the number being pressed and loop.
 			ld		(hl),a
-			jp		START+GENERATION_LOOP_INIT_LOOP
+			jr		GENERATION_LOOP_INIT_LOOP
 
 		; No keys found
 		GENERATION_LOOP_READ_LOOP_NO_KEYS:
@@ -371,7 +369,7 @@ GENERATION_LOOP:
 			; If the timer is already 0, the timer is off so loop around
 			ld		a,b
 			and		a
-			jp		z,START+GENERATION_LOOP_READ_LOOP
+			jr		z,GENERATION_LOOP_READ_LOOP
 
 			; Otherwise decrement the timer and automatically jump to generation if the timer is 0
 			dec		bc
