@@ -376,17 +376,71 @@ EDIT_WORLD_READ_LOOP:
 			bit		3,a
 			jr		z,EDIT_WORLD_READ_LOOP_W
 
-			; Jump to world edit mode
-			jp		START+EDIT_WORLD
+			; Jump to rules edit mode
+			jp		START+EDIT_RULES
 
 		; Test for a W
 		EDIT_WORLD_READ_LOOP_W:
 			bit		1,a
-			jr		z,EDIT_WORLD_READ_LOOP
+			jr		z,EDIT_WORLD_READ_LOOP_B_OR_N
 
 			; Jump to the generation loop
 			jr		GENERATION_LOOP
 
+	; Look for a B or N key
+	EDIT_WORLD_READ_LOOP_B_OR_N:
+
+		; Get the keypresses
+		ld		a,%10000000
+		ld		d,%00011000
+		call	START+GET_KEYBOARD_INPUT
+
+		; Test for a B
+		EDIT_WORLD_READ_LOOP_B:
+			bit		4,a
+			jr		z,EDIT_WORLD_READ_LOOP_N
+
+			; Found a B, so rollback to the previous generation.
+			; Swap ix and iy, then go back to the start of the start of the section.
+			push	ix
+			push	iy
+			pop		ix
+			pop		iy
+			jp		START+EDIT_WORLD
+
+		; Test for an  N
+		EDIT_WORLD_READ_LOOP_N:
+			bit		3,a
+			jr		z,EDIT_WORLD_READ_LOOP_NUMBERS
+
+			; Swap worlds
+			push	ix
+			push	iy
+			pop		ix
+			pop		iy
+
+			; Zero the other world
+			ld		a,0
+			call	START+FILL_WORLD
+
+			; Jump to the start
+			jp		START+EDIT_WORLD
+
+	; Look for numbers
+	EDIT_WORLD_READ_LOOP_NUMBERS:
+
+		; Get the keypresses
+		ld		a,%00001000
+		ld		d,%00011111
+		call	START+GET_KEYBOARD_INPUT
+
+		; If no numbers are being pressed, jump
+		and		a
+		jp		z,START+EDIT_WORLD_READ_LOOP
+
+		; Else set the world generation to the number being pressed and jump to the generation loop
+		ld		(AUTO_GEN_TIMER),a
+		jr		GENERATION_LOOP
 
 
 
@@ -410,54 +464,6 @@ EDIT_WORLD_TOGGLE_CURSOR:
 
 	; Return
 	ret
-
-
-
-
-
-
-
-; A function to get the world byte location from cursor coordinates stored in de.
-; The world location is stored in hl, and the a is set to the bitmask for the correct bit of the world byte.
-GET_WORLD_BYTE_LOCATION:
-
-	; Set hl to ix
-	push	ix
-	pop		hl
-
-	; We want (upper of ix)  0 Y4 Y3 Y2 Y1 Y0 X4 X3.
-	; Sort out the Ys first. Store them in l.
-	ld		a,d
-	rlca
-	rlca
-	ld		l,a
-
-	; Copy X0-X2 into d temporarily.
-	ld		a,e
-	and		%00000111
-	ld		d,a
-
-	; Shift X right and or it with the Ys and we are done.
-    ; Copy the result into l.
-	ld		a,e
-	and		%11111000
-	rrca
-	rrca
-	rrca
-	or		l
-	ld		l,a
-
-	; Now we produce the mask.
-	; While decrementing d is non-negative, rotate a right.
-	ld		a,%00000001
-	GET_WORLD_BYTE_LOCATION_MASK_LOOP:
-		rrca
-		dec		d
-		jp		p,START+GET_WORLD_BYTE_LOCATION_MASK_LOOP
-
-	; Return
-	ret
-
 
 
 
@@ -558,33 +564,52 @@ GENERATION_LOOP_READ_LOOP:
 		; Test for a T
 		GENERATION_LOOP_READ_LOOP_T:
 			bit		4,a
-			jr		z,GENERATION_LOOP_READ_LOOP_B
+			jr		z,GENERATION_LOOP_READ_LOOP_B_OR_N
 
 			; Reset the timer and loop
 			ld		(hl),0
 			jr		GENERATION_LOOP_INIT_LOOP
 
-	; Look for a B key
-	GENERATION_LOOP_READ_LOOP_B:
+	; Look for a B or N key
+	GENERATION_LOOP_READ_LOOP_B_OR_N:
 
 		; Get the keypresses
 		ld		a,%10000000
-		ld		d,%00010000
+		ld		d,%00011000
 		call	START+GET_KEYBOARD_INPUT
 
 		; Test for a B
-		bit		4,a
-		jr		z,GENERATION_LOOP_READ_LOOP_NUMBERS
+		GENERATION_LOOP_READ_LOOP_B:
+			bit		4,a
+			jr		z,GENERATION_LOOP_READ_LOOP_N
 
-		; Found a B, so rollback to the previous generation.
-		; Swap ix and iy and set the timer to 0.
-		; Then go back to the start of the generation loop.
-		push	ix
-		push	iy
-		pop		ix
-		pop		iy
-		ld		(hl),0
-		jr		GENERATION_LOOP_INIT_LOOP
+			; Found a B, so rollback to the previous generation.
+			; Swap ix and iy and set the timer to 0.
+			; Then go back to the start of the generation loop.
+			push	ix
+			push	iy
+			pop		ix
+			pop		iy
+			ld		(hl),0
+			jr		GENERATION_LOOP_INIT_LOOP
+
+		; Test for an  N
+		GENERATION_LOOP_READ_LOOP_N:
+			bit		3,a
+			jr		z,GENERATION_LOOP_READ_LOOP_NUMBERS
+
+			; Swap worlds
+			push	ix
+			push	iy
+			pop		ix
+			pop		iy
+
+			; Zero the other world
+			ld		a,0
+			call	START+FILL_WORLD
+
+			; Jump to editing
+			jp		START+EDIT_WORLD
 
 	; Look for numbers
 	GENERATION_LOOP_READ_LOOP_NUMBERS:
@@ -624,86 +649,8 @@ GENERATION_LOOP_READ_LOOP:
 
 
 
-; This function reloads a world onto the screen.
-; The world pointed to by ix is loaded.
-DISPLAY_WORLD:
-
-	; Wait for the frame to write
-	halt
-
-	; Set hl to the position of the first screen attribute
-    ld		hl,ATTRIBUTE_DATA
-
-	; Loop through all bytes to display the world.
-	; Set b to count through the bytes.
-	ld		b,96
-	DISPLAY_WORLD_LOOP:
-
-		; Load the next byte into e and complement it.
-		ld		a,(ix+0)
-		cpl
-		ld		e,a
-
-		; Iterate over the bits in e and set the attributes
-		sla		e
-		sbc		a,a
-		ld		(hl),a
-		inc		hl
-
-		sla		e
-		sbc		a,a
-		ld		(hl),a
-		inc		hl
-
-		sla		e
-		sbc		a,a
-		ld		(hl),a
-		inc		hl
-
-		sla		e
-		sbc		a,a
-		ld		(hl),a
-		inc		hl
-
-		sla		e
-		sbc		a,a
-		ld		(hl),a
-		inc		hl
-
-		sla		e
-		sbc		a,a
-		ld		(hl),a
-		inc		hl
-
-		sla		e
-		sbc		a,a
-		ld		(hl),a
-		inc		hl
-
-		sla		e
-		sbc		a,a
-		ld		(hl),a
-		inc		hl
-
-		; Increment ix
-		inc 	ix
-
-		; Now loop to the next byte of the world
-		djnz	DISPLAY_WORLD_LOOP
-
-	; Reset ix
-	ld		bc,65536-96
-	add		ix,bc
-
-	; Return
-	ret
-
-
-
-
-
-; Include the next generation code
-#include "NextGeneration.asm"
+; Include the world interface code
+#include "World.asm"
 
 ; Include IO.asm
 #include "IO.asm"
