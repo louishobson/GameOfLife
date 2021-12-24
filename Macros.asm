@@ -37,6 +37,10 @@
 ; The current position of the cursor in the edit rules menu.
 #define	EDIT_RULES_CURSOR 62739
 
+; The current position of the cursor in the edit world menu.
+; The cursor takes up two bytes.
+#define EDIT_WORLD_CURSOR 62740
+
 ; Define the position of the character bitmaps in memory.
 #define CHAR_BITMAPS $3c00
 #define CHAR_BITMAPS_UPPER $3c
