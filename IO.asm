@@ -261,6 +261,8 @@ FILL_ATTRIBUTE_DATA:
 
 
 
+
+
 ; This function fills b bytes of the screen attribute data with the contents of a.
 ; The starting position should be loaded in de.
 PARTIAL_FILL_ATTRIBUTE_DATA:
@@ -285,6 +287,8 @@ PARTIAL_FILL_ATTRIBUTE_DATA:
 
 
 
+
+
 ; This function gets keys.
 ; The groups should be in a, and the keys will be loaded to a.
 ; A mask of the specific keys in the groups being searched should be loaded to d.
@@ -293,7 +297,7 @@ PARTIAL_FILL_ATTRIBUTE_DATA:
 ; de will be modified.
 GET_KEYBOARD_INPUT:
 
-	; Complement the group and save it in l
+	; Complement the group and save it in e
 	cpl
 	ld		e,a
 
