@@ -25,25 +25,13 @@ ENTRY_CODE:
 	ld		hl,EDIT_RULES_CURSOR
 	ld		(hl),0
 
+	; Set the edit world cursor to 0
+	ld		hl,0
+	ld		(EDIT_WORLD_CURSOR),hl
+
     ; Set the automatic timer to off
     ld		hl,AUTO_GEN_TIMER
     ld		(hl),0
-
-	; Load some rules
-    ld		hl,RULES+1
-    ld		(hl),255
-    inc		hl
-    ld		(hl),255
-    ld		hl,RULES+10
-    ld		(hl),255
-    inc		hl
-    ld		(hl),255
-
-    ; Load some world values
-    ld		(ix+0),%10000000
-    ld		(ix+3),%00000001
-    ld		(ix+92),%10000000
-    ld		(ix+95),%00000001
 
 	; Jump to editing rules (automatically)
 
@@ -141,7 +129,7 @@ EDIT_RULES_READ_LOOP:
 		ld		a,%01111000
 		call	START+EDIT_RULES_SHOW_CURSOR
 
-		; Decrement the cursor. If it is more than 18, set to 17
+		; Decrement the cursor. If it decreased below 0, set it to 17.
 		dec		(hl)
 		jp		p,START+EDIT_RULES_INIT_LOOP
 		ld		(hl),17
@@ -160,7 +148,8 @@ EDIT_RULES_READ_LOOP:
 			bit		2,a
 			jr		z,EDIT_RULES_READ_LOOP_W
 
-			; Jump to world edit mode...
+			; Jump to world edit mode
+			jr		EDIT_WORLD
 
 		; Test for a W
 		EDIT_RULES_READ_LOOP_W:
@@ -168,7 +157,8 @@ EDIT_RULES_READ_LOOP:
 			jr		z,EDIT_RULES_READ_LOOP
 
 			; Jump to the generation loop
-			jr		GENERATION_LOOP
+			jp		START+GENERATION_LOOP
+
 
 
 
@@ -251,6 +241,253 @@ EDIT_RULES_SHOW_CURSOR:
 
 
 
+; The edit world menu
+EDIT_WORLD
+
+	; Clear the pixel data
+    ld		a,0
+    call	START+FILL_PIXEL_DATA
+
+	; Display the world
+    call	START+DISPLAY_WORLD
+
+; Initialize the read loop.
+EDIT_WORLD_INIT_LOOP:
+
+	; Toggle the cursor
+	call	START+EDIT_WORLD_TOGGLE_CURSOR
+
+; Start the read loop
+EDIT_WORLD_READ_LOOP:
+
+	; Load the cursor location into hl
+    ld		hl,EDIT_WORLD_CURSOR
+
+	; Look for an enter or L key
+	EDIT_WORLD_READ_LOOP_ENTER_OR_L:
+
+		; Get the keypresses
+		ld		a,%01000000
+		ld		d,%00000011
+		call	START+GET_KEYBOARD_INPUT
+
+		; Test for enter
+		EDIT_WORLD_READ_LOOP_ENTER:
+			bit		0,a
+			jr		z,EDIT_WORLD_READ_LOOP_L
+
+			; Toggle the world aliveness
+			call	START+EDIT_WORLD_TOGGLE_WORLD
+
+			; Loop
+			jr		EDIT_WORLD_READ_LOOP
+
+		; Test for L
+		EDIT_WORLD_READ_LOOP_L:
+			bit		1,a
+			jr		z,EDIT_WORLD_READ_LOOP_P
+
+			; Toggle the cursor
+			call	START+EDIT_WORLD_TOGGLE_CURSOR
+
+			; Move the cursor down. Remember to wrap and loop.
+			inc		hl
+			inc		(hl)
+			ld		a,(hl)
+			cp		24
+			jp		m,START+EDIT_WORLD_INIT_LOOP
+			ld		(hl),0
+			jr		EDIT_WORLD_INIT_LOOP
+
+	; Look for P key
+	EDIT_WORLD_READ_LOOP_P:
+
+		; Get the keypresses
+		ld		a,%00100000
+		ld		d,%00000001
+		call	START+GET_KEYBOARD_INPUT
+
+		; Look for a P
+		and		a
+		jr		z,EDIT_WORLD_READ_LOOP_Z_OR_X
+
+		; Toggle the cursor
+		call	START+EDIT_WORLD_TOGGLE_CURSOR
+
+		; Move the cursor up. Remember to wrap and loop.
+		inc		hl
+		dec		(hl)
+		jp		p,START+EDIT_WORLD_INIT_LOOP
+		ld		(hl),23
+		jr		EDIT_WORLD_INIT_LOOP
+
+	; Look for a Z or X key
+	EDIT_WORLD_READ_LOOP_Z_OR_X:
+
+		; Get the keypresses
+		ld		a,%00000001
+		ld		d,%00000110
+		call	START+GET_KEYBOARD_INPUT
+
+		; Look for a Z
+		EDIT_WORLD_READ_LOOP_Z
+			bit		1,a
+			jr		z,EDIT_WORLD_READ_LOOP_X
+
+			; Toggle the cursor
+            call	START+EDIT_WORLD_TOGGLE_CURSOR
+
+			; Move the cursor left. Remember to wrap.
+			ld		a,(hl)
+			dec		a
+			and		%00011111
+			ld		(hl),a
+
+			; Loop
+			jr		EDIT_WORLD_INIT_LOOP
+
+		; Look for an X
+		EDIT_WORLD_READ_LOOP_X
+			bit		2,a
+			jr		z,EDIT_WORLD_READ_LOOP_W_OR_R
+
+			; Toggle the cursor
+			call	START+EDIT_WORLD_TOGGLE_CURSOR
+
+			; Move the cursor right. Remember to wrap.
+			ld		a,(hl)
+			inc		a
+			and		%00011111
+			ld		(hl),a
+
+			; Loop
+			jr		EDIT_WORLD_INIT_LOOP
+
+	; Look for a W or R key
+	EDIT_WORLD_READ_LOOP_W_OR_R:
+
+		; Get the keypresses
+		ld		a,%00000100
+		ld		d,%00001010
+		call	START+GET_KEYBOARD_INPUT
+
+		; Test for an R
+		EDIT_WORLD_READ_LOOP_R:
+			bit		3,a
+			jr		z,EDIT_WORLD_READ_LOOP_W
+
+			; Jump to world edit mode
+			jp		START+EDIT_WORLD
+
+		; Test for a W
+		EDIT_WORLD_READ_LOOP_W:
+			bit		1,a
+			jr		z,EDIT_WORLD_READ_LOOP
+
+			; Jump to the generation loop
+			jr		GENERATION_LOOP
+
+
+
+
+
+
+; A function to toggle the cursor at the current position.
+; Modifies de.
+EDIT_WORLD_TOGGLE_CURSOR:
+
+	; Load the cursor and translate it to an attribute location
+	ld		de,(EDIT_WORLD_CURSOR)
+	call	START+GET_ATTRIBUTE_LOCATION
+
+	; Load the attribute into the accumulator, set the cursor, then replace the attribute
+	ld		a,(de)
+	xor		%00000001
+	or		%10000000
+	ld		(de),a
+
+	; Reload the cursor but this time translate it to a world position.
+
+	; Return
+	ret
+
+
+
+
+
+
+
+; A function to get the world byte location from cursor coordinates stored in de.
+; The world location is stored in hl, and the a is set to the bitmask for the correct bit of the world byte.
+GET_WORLD_BYTE_LOCATION:
+
+	; Set hl to ix
+	push	ix
+	pop		hl
+
+	; We want (upper of ix)  0 Y4 Y3 Y2 Y1 Y0 X4 X3.
+	; Sort out the Ys first. Store them in l.
+	ld		a,d
+	rlca
+	rlca
+	ld		l,a
+
+	; Copy X0-X2 into d temporarily.
+	ld		a,e
+	and		%00000111
+	ld		d,a
+
+	; Shift X right and or it with the Ys and we are done.
+    ; Copy the result into l.
+	ld		a,e
+	and		%11111000
+	rrca
+	rrca
+	rrca
+	or		l
+	ld		l,a
+
+	; Now we produce the mask.
+	; While decrementing d is non-negative, rotate a right.
+	ld		a,%00000001
+	GET_WORLD_BYTE_LOCATION_MASK_LOOP:
+		rrca
+		dec		d
+		jp		p,START+GET_WORLD_BYTE_LOCATION_MASK_LOOP
+
+	; Return
+	ret
+
+
+
+
+
+
+; A function to toggle the world aliveness at the current cursor position.
+; Also toggles the screen attribute
+; Modifies de.
+EDIT_WORLD_TOGGLE_WORLD:
+
+	; Load the cursor and toggle the screen attribute.
+	ld		de,(EDIT_WORLD_CURSOR)
+    call	START+GET_ATTRIBUTE_LOCATION
+    ld		a,(de)
+    xor		%01111111
+    ld		(de),a
+
+    ; Load the cursor again, and toggle the aliveness in memory.
+    ld		de,(EDIT_WORLD_CURSOR)
+    call	START+GET_WORLD_BYTE_LOCATION
+    xor		(hl)
+    ld		(hl),a
+
+    ; Return
+    ret
+
+
+
+
+
 ; This part is the rendering loop.
 ; You can set a timer to automatically produce new generations at a particular frequency, or step through them manually.
 GENERATION_LOOP:
@@ -259,127 +496,129 @@ GENERATION_LOOP:
 	ld		a,0
 	call	START+FILL_PIXEL_DATA
 
-	; Initialize the key read loop.
-	; hl holds the address of the auto gen timer.
-	; bc holds the timer, which is reset on loop initialization.
-	; In particular, b is set to the timer value, and c to 0, so the timer length is effectively multiplied by 256.
-	GENERATION_LOOP_INIT_LOOP:
+; Initialize the key read loop.
+; hl holds the address of the auto gen timer.
+; bc holds the timer, which is reset on loop initialization.
+; In particular, b is set to the timer value, and c to 0, so the timer length is effectively multiplied by 256.
+GENERATION_LOOP_INIT_LOOP:
 
-		; Display the world
-		call	START+DISPLAY_WORLD
+	; Display the world
+	call	START+DISPLAY_WORLD
 
-		; Load the timer
-		ld		hl,AUTO_GEN_TIMER
-		ld		b,(hl)
-		ld		c,0
+	; Load the timer
+	ld		hl,AUTO_GEN_TIMER
+	ld		b,(hl)
+	ld		c,0
 
-	; Loop while reading the keyboard
-	GENERATION_LOOP_READ_LOOP:
+; Loop while reading the keyboard
+GENERATION_LOOP_READ_LOOP:
 
-		; Look for an enter key
-		GENERATION_LOOP_READ_LOOP_ENTER:
+	; Look for an enter key
+	GENERATION_LOOP_READ_LOOP_ENTER:
 
-			; Get the keypresses
-			ld		a,%01000000
-			ld		d,%00000001
-			call	START+GET_KEYBOARD_INPUT
+		; Get the keypresses
+		ld		a,%01000000
+		ld		d,%00000001
+		call	START+GET_KEYBOARD_INPUT
 
-			; Test for the key
-			and		a
-			jr		z,GENERATION_LOOP_READ_LOOP_E_R_T
+		; Test for the key
+		and		a
+		jr		z,GENERATION_LOOP_READ_LOOP_E_R_T
 
-			; Generate the next world and loop
-			call	START+NEXT_GENERATION
-			jr		GENERATION_LOOP_INIT_LOOP
+		; Generate the next world and loop
+		call	START+NEXT_GENERATION
+		jr		GENERATION_LOOP_INIT_LOOP
 
-		; Look for an E or R or T key
-		GENERATION_LOOP_READ_LOOP_E_R_T:
+	; Look for an E or R or T key
+	GENERATION_LOOP_READ_LOOP_E_R_T:
 
-			; Get the keypresses
-			ld		a,%00000100
-			ld		d,%00011100
-			call	START+GET_KEYBOARD_INPUT
+		; Get the keypresses
+		ld		a,%00000100
+		ld		d,%00011100
+		call	START+GET_KEYBOARD_INPUT
 
-			; Test for an E
-			GENERATION_LOOP_READ_LOOP_E:
-				bit		2,a
-				jr		z,GENERATION_LOOP_READ_LOOP_R
+		; Test for an E
+		GENERATION_LOOP_READ_LOOP_E:
+			bit		2,a
+			jr		z,GENERATION_LOOP_READ_LOOP_R
 
-				; Jump to world edit mode...
+			; Reset the timer and jump to editing the world
+			ld		(hl),0
+			jp		START+EDIT_WORLD
 
-			; Test for an R
-			GENERATION_LOOP_READ_LOOP_R:
-				bit		3,a
-				jr		z,GENERATION_LOOP_READ_LOOP_T
+		; Test for an R
+		GENERATION_LOOP_READ_LOOP_R:
+			bit		3,a
+			jr		z,GENERATION_LOOP_READ_LOOP_T
 
-				; Reset the timer and jump to editing the rules
-                ld		(hl),0
-				jp		START+EDIT_RULES
+			; Reset the timer and jump to editing the rules
+			ld		(hl),0
+			jp		START+EDIT_RULES
 
-			; Test for a T
-			GENERATION_LOOP_READ_LOOP_T:
-				bit		4,a
-				jr		z,GENERATION_LOOP_READ_LOOP_B
-
-				; Reset the timer and loop
-				ld		(hl),0
-				jr		GENERATION_LOOP_INIT_LOOP
-
-		; Look for a B key
-		GENERATION_LOOP_READ_LOOP_B:
-
-			; Get the keypresses
-			ld		a,%10000000
-			ld		d,%00010000
-			call	START+GET_KEYBOARD_INPUT
-
-			; Test for a B
+		; Test for a T
+		GENERATION_LOOP_READ_LOOP_T:
 			bit		4,a
-			jr		z,GENERATION_LOOP_READ_LOOP_NUMBERS
+			jr		z,GENERATION_LOOP_READ_LOOP_B
 
-			; Found a B, so rollback to the previous generation.
-			; Swap ix and iy and set the timer to 0.
-			; Then go back to the start of the generation loop.
-			push	ix
-			push	iy
-			pop		ix
-			pop		iy
+			; Reset the timer and loop
 			ld		(hl),0
 			jr		GENERATION_LOOP_INIT_LOOP
 
-		; Look for numbers
-		GENERATION_LOOP_READ_LOOP_NUMBERS:
+	; Look for a B key
+	GENERATION_LOOP_READ_LOOP_B:
 
-			; Get the keypresses
-			ld		a,%00001000
-            ld		d,%00011111
-            call	START+GET_KEYBOARD_INPUT
+		; Get the keypresses
+		ld		a,%10000000
+		ld		d,%00010000
+		call	START+GET_KEYBOARD_INPUT
 
-			; If no numbers are being pressed, jump
-			and		a
-			jr		z,GENERATION_LOOP_READ_LOOP_NO_KEYS
+		; Test for a B
+		bit		4,a
+		jr		z,GENERATION_LOOP_READ_LOOP_NUMBERS
 
-			; Else set the timer to the number being pressed and loop.
-			ld		(hl),a
-			jr		GENERATION_LOOP_INIT_LOOP
+		; Found a B, so rollback to the previous generation.
+		; Swap ix and iy and set the timer to 0.
+		; Then go back to the start of the generation loop.
+		push	ix
+		push	iy
+		pop		ix
+		pop		iy
+		ld		(hl),0
+		jr		GENERATION_LOOP_INIT_LOOP
 
-		; No keys found
-		GENERATION_LOOP_READ_LOOP_NO_KEYS:
+	; Look for numbers
+	GENERATION_LOOP_READ_LOOP_NUMBERS:
 
-			; If the timer is already 0, the timer is off so loop around
-			ld		a,b
-			and		a
-			jr		z,GENERATION_LOOP_READ_LOOP
+		; Get the keypresses
+		ld		a,%00001000
+		ld		d,%00011111
+		call	START+GET_KEYBOARD_INPUT
 
-			; Otherwise decrement the timer and automatically jump to generation if the timer is 0
-			dec		bc
-			ld		a,b
-			and		a
-			jp		nz,START+GENERATION_LOOP_READ_LOOP
+		; If no numbers are being pressed, jump
+		and		a
+		jr		z,GENERATION_LOOP_READ_LOOP_NO_KEYS
 
-			; Otherwise produce the next generation and return to getting keys
-			call	START+NEXT_GENERATION
-			jp		START+GENERATION_LOOP_INIT_LOOP
+		; Else set the timer to the number being pressed and loop.
+		ld		(hl),a
+		jr		GENERATION_LOOP_INIT_LOOP
+
+	; No keys found
+	GENERATION_LOOP_READ_LOOP_NO_KEYS:
+
+		; If the timer is already 0, the timer is off so loop around
+		ld		a,b
+		and		a
+		jr		z,GENERATION_LOOP_READ_LOOP
+
+		; Otherwise decrement the timer and automatically jump to generation if the timer is 0
+		dec		bc
+		ld		a,b
+		and		a
+		jp		nz,START+GENERATION_LOOP_READ_LOOP
+
+		; Otherwise produce the next generation and return to getting keys
+		call	START+NEXT_GENERATION
+		jp		START+GENERATION_LOOP_INIT_LOOP
 
 
 
