@@ -598,11 +598,12 @@ GENERATION_LOOP_READ_LOOP:
 			bit		3,a
 			jr		z,GENERATION_LOOP_READ_LOOP_NUMBERS
 
-			; Swap worlds
+			; Swap worlds and zero the timer.
 			push	ix
 			push	iy
 			pop		ix
 			pop		iy
+			ld		(hl),0
 
 			; Zero the other world
 			ld		a,0
