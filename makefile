@@ -27,7 +27,7 @@ clean:
 	find . -type f -name "*\.wav" -delete -print
 
 .PHONY: prepare
-prepare
+prepare:
 	mkdir -p bin tzx wav
 
 tzx/GameOfLifeLoader.tzx: GameOfLifeLoader.tzx_
