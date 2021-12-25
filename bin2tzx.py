@@ -1,3 +1,9 @@
+#
+# Copyright (C) 2021 Louis Hobson <louis-hobson@hotmail.co.uk>. All Rights Reserved.
+#
+# Distributed under MIT licence as a part of a cellular automaton project.
+# For details, see: https://github.com/louishobson/GameOfLife/blob/master/LICENSE
+#
 # TextConc.py
 #
 # This tool takes a binary file as its first argument, the block name as its second, and the output tzx as its last.
