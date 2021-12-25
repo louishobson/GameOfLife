@@ -1,3 +1,9 @@
+;
+; Macros.asm
+;
+; Defines various macros, mainly important memory addresses.
+
+
 ; Include once
 #ifndef MACROS_INCLUDE_ONCE
 #define MACROS_INCLUDE_ONCE
