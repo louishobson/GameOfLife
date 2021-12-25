@@ -1,7 +1,7 @@
 ;
-; Printing.asm
+; IO.asm
 ;
-; Various functions for printing characters to the screen
+; Various functions for interfacing with the screen and keyboard.
 
 ; Include macros
 #include "Macros.asm"
