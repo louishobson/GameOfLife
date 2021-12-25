@@ -84,7 +84,7 @@ Controls:
 
 Here you can actually iterate through generations. One notable feature is double buffering. There are two worlds stored in memory: the one currently being
 read from and the one that will be written to. You can flip the buffers, by pressing **B**, to go back one generation. Also, pressing **N** to create a new,
-empty world, will flip the buffers before erasing the world. This means you can effectively undo by pressing **B**. 
+empty world will flip the buffers before erasing the world. This means you can effectively undo by pressing **B**. 
 You can also set the generations to auto-iterate at different speeds. When leaving the generation menu, the auto-timer is automatically turned off.
 
 Controls:
