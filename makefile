@@ -1,5 +1,10 @@
 #!/bin/make
-
+#
+# Copyright (C) 2021 Louis Hobson <louis-hobson@hotmail.co.uk>. All Rights Reserved.
+#
+# Distributed under MIT licence as a part of a cellular automaton project.
+# For details, see: https://github.com/louishobson/GameOfLife/blob/master/LICENSE
+#
 # Executable dependencies:
 #
 # zxbasm: Z80 assembler: https://zxbasic.readthedocs.io/
@@ -25,19 +30,19 @@ clean:
 prepare
 	mkdir -p bin tzx wav
 
-tzx/GameOfLifeLoader.tzx: prepare GameOfLifeLoader.tzx_
+tzx/GameOfLifeLoader.tzx: GameOfLifeLoader.tzx_
 	cp GameOfLifeLoader.tzx_ tzx/GameOfLifeLoader.tzx
 
-tzx/GameOfLifeBytes.tzx: prepare Interface.asm World.asm NextGeneration.asm IO.asm Macros.asm
+tzx/GameOfLifeBytes.tzx: Interface.asm World.asm NextGeneration.asm IO.asm Macros.asm
 	zxbasm -T -O0 Interface.asm -o tzx/GameOfLifeBytes.tzx
 
-bin/GameOfLifeBytes.bin: prepare Interface.asm World.asm NextGeneration.asm IO.asm Macros.asm
+bin/GameOfLifeBytes.bin: Interface.asm World.asm NextGeneration.asm IO.asm Macros.asm
 	zxbasm -O0 Interface.asm -o bin/GameOfLifeBytes.bin
 
-tzx/GameOfLife.tzx: prepare tzx/GameOfLifeLoader.tzx tzx/GameOfLifeBytes.tzx
+tzx/GameOfLife.tzx: tzx/GameOfLifeLoader.tzx tzx/GameOfLifeBytes.tzx
 	tzxmerge tzx/GameOfLifeLoader.tzx tzx/GameOfLifeBytes.tzx -o tzx/GameOfLife.tzx
 
-wav/GameOfLife.wav: prepare tzx/GameOfLife.tzx
+wav/GameOfLife.wav: tzx/GameOfLife.tzx
 	tape2wav tzx/GameOfLife.tzx wav/GameOfLife.wav
 
 run: tzx/GameOfLife.tzx
