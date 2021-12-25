@@ -14,13 +14,13 @@
 ; ix and iy are automatically swapped.
 NEXT_GENERATION:
 
-	; Set b, the byte counter, to 9 so we can count bits
+	; Set b, the byte counter, to 9, so we can count bits before we need to write to the world
 	ld		b,9
 
-	; Set c, the column counter, to 96 so we can count columns and rows
+	; Set c, the column counter, to 96, so we can count columns and rows
 	ld 		c,96
 
-	; Set e, the column accumulator, to 0 so we can accumulate the next byte of the new world
+	; Set e, the column accumulator, to 0, so we can accumulate the next byte of the new world
 	ld 		e,0
 
 	; Swap the registers
