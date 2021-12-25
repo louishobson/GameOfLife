@@ -1,7 +1,14 @@
 ;
+; Copyright (C) 2021 Louis Hobson <louis-hobson@hotmail.co.uk>. All Rights Reserved.
+;
+; Distributed under MIT licence as a part of a cellular automaton project.
+; For details, see: https://github.com/louishobson/GameOfLife/blob/master/LICENSE
+;
 ; NextGeneration.asm
 ;
 ; Contains functions for creating the next generation.
+
+
 
 ; Include macros
 #include "Macros.asm"

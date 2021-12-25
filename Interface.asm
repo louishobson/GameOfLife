@@ -1,7 +1,14 @@
 ;
+; Copyright (C) 2021 Louis Hobson <louis-hobson@hotmail.co.uk>. All Rights Reserved.
+;
+; Distributed under MIT licence as a part of a cellular automaton project.
+; For details, see: https://github.com/louishobson/GameOfLife/blob/master/LICENSE
+;
 ; Interface.asm
 ;
 ; The main entry point of the program, including all read-act loops.
+
+
 
 ; Include the macros
 #include "Macros.asm"

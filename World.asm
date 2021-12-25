@@ -1,7 +1,14 @@
 ;
+; Copyright (C) 2021 Louis Hobson <louis-hobson@hotmail.co.uk>. All Rights Reserved.
+;
+; Distributed under MIT licence as a part of a cellular automaton project.
+; For details, see: https://github.com/louishobson/GameOfLife/blob/master/LICENSE
+;
 ; World.asm
 ;
 ; Contains functions for interfacing with the current world(s).
+
+
 
 ; Include macros
 #include "Macros.asm"

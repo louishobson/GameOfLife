@@ -1,12 +1,20 @@
 ;
+; Copyright (C) 2021 Louis Hobson <louis-hobson@hotmail.co.uk>. All Rights Reserved.
+;
+; Distributed under MIT licence as a part of a cellular automaton project.
+; For details, see: https://github.com/louishobson/GameOfLife/blob/master/LICENSE
+;
 ; Macros.asm
 ;
 ; Defines various macros, mainly important memory addresses.
 
 
+
 ; Include once
 #ifndef MACROS_INCLUDE_ONCE
 #define MACROS_INCLUDE_ONCE
+
+
 
 ; The load position of the program
 #define START 60000
@@ -64,6 +72,8 @@
 
 ; The keyboard's id
 #define KEYBOARD_IN_ID $fe
+
+
 
 ; End of pragma once
 #endif
