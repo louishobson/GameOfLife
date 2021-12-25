@@ -1,8 +1,7 @@
 ;
 ; Interface.asm
 ;
-; Contains interface functions.
-; Also the main entry point.
+; The main entry point of the program, including all read-act loops.
 
 ; Include the macros
 #include "Macros.asm"
