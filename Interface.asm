@@ -59,27 +59,26 @@ EDIT_RULES:
 	ld		de,0
 	call	START+PRINT_STRING
 
+	; Show all rules
+    call	START+EDIT_RULES_SHOW_RULES
+
 ; Initialize the read loop.
 ; hl stores the address in memory of the cursor position.
 ; bc stores the address in memory of the current rule being modified.
 EDIT_RULES_INIT_LOOP:
 
-	; Show all rules
-	call	START+EDIT_RULES_SHOW_RULES
-
-	; Set hl to the cursor location
-    ld		hl,EDIT_RULES_CURSOR
-
 	; Show the cursor
-	ld		a,%10111000
-	call	START+EDIT_RULES_SHOW_CURSOR
-
-    ; Set bc to the address of the current rule
-    ld		b,RULES_UPPER
-    ld		c,(hl)
+	call	START+EDIT_RULES_TOGGLE_CURSOR
 
 ; Start the read loop
 EDIT_RULES_READ_LOOP:
+
+	; Set hl to the cursor location
+	ld		hl,EDIT_RULES_CURSOR
+
+	; Set bc to the address of the current rule
+	ld		b,RULES_UPPER
+	ld		c,(hl)
 
 	; Look for an enter or L key
 	EDIT_RULES_READ_LOOP_ENTER_OR_L:
@@ -99,8 +98,11 @@ EDIT_RULES_READ_LOOP:
 			cpl
 			ld		(bc),a
 
+			; Show the rules
+            call	START+EDIT_RULES_SHOW_RULES
+
 			; Loop around
-			jr		EDIT_RULES_INIT_LOOP
+			jr		EDIT_RULES_READ_LOOP
 
 		; Test for L
         EDIT_RULES_READ_LOOP_L:
@@ -108,8 +110,7 @@ EDIT_RULES_READ_LOOP:
         	jr		z,EDIT_RULES_READ_LOOP_P
 
         	; Remove the cursor
-			ld		a,%01111000
-			call	START+EDIT_RULES_SHOW_CURSOR
+			call	START+EDIT_RULES_TOGGLE_CURSOR
 
 			; Increment the cursor. If it exceeded 18, set it to 0
 			inc		(hl)
@@ -132,8 +133,7 @@ EDIT_RULES_READ_LOOP:
 		jr		z,EDIT_RULES_READ_LOOP_W_OR_E
 
 		; Remove the cursor
-		ld		a,%01111000
-		call	START+EDIT_RULES_SHOW_CURSOR
+		call	START+EDIT_RULES_TOGGLE_CURSOR
 
 		; Decrement the cursor. If it decreased below 0, set it to 17.
 		dec		(hl)
@@ -177,9 +177,9 @@ EDIT_RULES_SHOW_RULES:
 	ld		hl,RULES
 
 	; Set up the initial writing position.
-	; The column is always 20, and the row varies starting as 3.
+	; The column is always 9, and the row varies starting as 3.
 	ld		d,3
-	ld		e,20
+	ld		e,9
 
 	; Loop over showing the rules
 	ld		b,18
@@ -220,25 +220,19 @@ EDIT_RULES_SHOW_RULES:
 
 
 
-; This function draws the cursor in the edit rules menu.
-; a should be set to the cursor attribute.
-; Expects hl to be set to the address of the cursor.
+; This function toggles the cursor in the edit rules menu.
 ; de is modified.
-EDIT_RULES_SHOW_CURSOR:
-
-	; Preserve a
-	push	af
-
+EDIT_RULES_TOGGLE_CURSOR:
 	; Get the current rule being modified, then the cursor position.
-	ld		a,(hl)
+	ld		a,(EDIT_RULES_CURSOR)
 	add		a,3
 	ld		d,a
-	ld		e,20
+	ld		e,9
 
 	; Color the cursor.
-	pop		af
+	ld		a,%11000000
 	ld		b,4
-	call	START+PARTIAL_FILL_ATTRIBUTE_DATA
+	call	START+PARTIAL_XOR_ATTRIBUTE_DATA
 
 	; Return
 	ret
