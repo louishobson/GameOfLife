@@ -662,7 +662,7 @@ GENERATION_LOOP_READ_LOOP:
 
 ; Text for the edit rules menu
 EDIT_RULES_TEXT:
-	incbin	"GameOfLifeEditRulesText.txt"
+	incbin	"EditRulesText.txt"
 	defb	0
 
 EDIT_RULES_TEXT_BLACK:
