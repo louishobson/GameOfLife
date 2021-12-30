@@ -297,6 +297,32 @@ PARTIAL_FILL_ATTRIBUTE_DATA:
 
 
 
+; This function xors b bytes of the screen attribute data with the contents of a.
+; The starting position should be loaded in de.
+; c will be modified.
+PARTIAL_XOR_ATTRIBUTE_DATA:
+
+	; Save a in c.
+	ld		c,a
+
+	; Set get the location of the first attribute
+	call	START+GET_ATTRIBUTE_LOCATION
+
+	; Keep xoring while b is non-zero
+	PARTIAL_XOR_ATTRIBUTE_DATA_LOOP:
+		ld		a,(de)
+		xor		c
+		ld		(de),a
+		inc		de
+		djnz	PARTIAL_XOR_ATTRIBUTE_DATA_LOOP
+
+	; Return
+	ret
+
+
+
+
+
 ; This function gets keys.
 ; The groups should be in a, and the keys will be loaded to a.
 ; A mask of the specific keys in the groups being searched should be loaded to d.
