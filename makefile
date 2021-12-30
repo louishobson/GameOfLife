@@ -22,7 +22,6 @@ wav: wav/GameOfLife.wav
 .PHONY: clean
 clean:
 	find . -type f -name "*\.bin" -delete -print
-	find . -type f -name "*\.bin" -delete -print
 	find . -type f -name "*\.tzx" -delete -print
 	find . -type f -name "*\.wav" -delete -print
 
