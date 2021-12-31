@@ -157,7 +157,7 @@ PRINT_STRING:
 
 	; Push de and call GET_PIXEL_LOCATION
 	push	de
-	call	START+GET_PIXEL_LOCATION
+	call	GET_PIXEL_LOCATION
 
 	; Loop over characters
 	PRINT_STRING_CHAR_LOOP:
@@ -184,7 +184,7 @@ PRINT_STRING:
 
 		; Push hl and get the bitmap location
 		push	hl
-		call	START+GET_BITMAP_LOCATION
+		call	GET_BITMAP_LOCATION
 
 		; Loop over writing the character
 		ld		b,8
@@ -279,7 +279,7 @@ PARTIAL_FILL_ATTRIBUTE_DATA:
 	push	af
 
 	; Set get the location of the first attribute
-	call	START+GET_ATTRIBUTE_LOCATION
+	call	GET_ATTRIBUTE_LOCATION
 
 	; Reload a
 	pop		af
@@ -306,7 +306,7 @@ PARTIAL_XOR_ATTRIBUTE_DATA:
 	ld		c,a
 
 	; Set get the location of the first attribute
-	call	START+GET_ATTRIBUTE_LOCATION
+	call	GET_ATTRIBUTE_LOCATION
 
 	; Keep xoring while b is non-zero
 	PARTIAL_XOR_ATTRIBUTE_DATA_LOOP:

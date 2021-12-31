@@ -21,7 +21,7 @@
 ENTRY_CODE:
 
 	; Load the empty interrupt
-	call	START+SETUP_EMPTY_INTERRUPT
+	call	SETUP_EMPTY_INTERRUPT
 
 	; Set ix to be WORLD1 and iy to be WORLD2
 	ld		ix,WORLD1
@@ -50,17 +50,17 @@ EDIT_RULES:
 
 	; Clear the screen
 	ld		a,0
-	call	START+FILL_PIXEL_DATA
+	call	FILL_PIXEL_DATA
 	ld		a,%01111000
-	call	START+FILL_ATTRIBUTE_DATA
+	call	FILL_ATTRIBUTE_DATA
 
 	; Write the menu text
-	ld		hl,START+EDIT_RULES_TEXT
+	ld		hl,EDIT_RULES_TEXT
 	ld		de,0
-	call	START+PRINT_STRING
+	call	PRINT_STRING
 
 	; Show all rules
-    call	START+EDIT_RULES_SHOW_RULES
+    call	EDIT_RULES_SHOW_RULES
 
 ; Initialize the read loop.
 ; hl stores the address in memory of the cursor position.
@@ -68,7 +68,7 @@ EDIT_RULES:
 EDIT_RULES_INIT_LOOP:
 
 	; Show the cursor
-	call	START+EDIT_RULES_TOGGLE_CURSOR
+	call	EDIT_RULES_TOGGLE_CURSOR
 
 ; Start the read loop
 EDIT_RULES_READ_LOOP:
@@ -86,7 +86,7 @@ EDIT_RULES_READ_LOOP:
 		; Get the keypresses
 		ld		a,%01000000
 		ld		d,%00000011
-		call	START+GET_KEYBOARD_INPUT
+		call	GET_KEYBOARD_INPUT
 
 		; Test for enter
 		EDIT_RULES_READ_LOOP_ENTER:
@@ -99,7 +99,7 @@ EDIT_RULES_READ_LOOP:
 			ld		(bc),a
 
 			; Show the rules
-            call	START+EDIT_RULES_SHOW_RULES
+            call	EDIT_RULES_SHOW_RULES
 
 			; Loop around
 			jr		EDIT_RULES_READ_LOOP
@@ -110,7 +110,7 @@ EDIT_RULES_READ_LOOP:
         	jr		z,EDIT_RULES_READ_LOOP_P
 
         	; Remove the cursor
-			call	START+EDIT_RULES_TOGGLE_CURSOR
+			call	EDIT_RULES_TOGGLE_CURSOR
 
 			; Increment the cursor. If it exceeded 18, set it to 0
 			inc		(hl)
@@ -126,18 +126,18 @@ EDIT_RULES_READ_LOOP:
 		; Get the keypresses
 		ld		a,%00100000
 		ld		d,%00000001
-		call	START+GET_KEYBOARD_INPUT
+		call	GET_KEYBOARD_INPUT
 
 		; Look for a P
 		and		a
 		jr		z,EDIT_RULES_READ_LOOP_W_OR_E
 
 		; Remove the cursor
-		call	START+EDIT_RULES_TOGGLE_CURSOR
+		call	EDIT_RULES_TOGGLE_CURSOR
 
 		; Decrement the cursor. If it decreased below 0, set it to 17.
 		dec		(hl)
-		jp		p,START+EDIT_RULES_INIT_LOOP
+		jp		p,EDIT_RULES_INIT_LOOP
 		ld		(hl),17
 		jr		EDIT_RULES_INIT_LOOP
 
@@ -147,7 +147,7 @@ EDIT_RULES_READ_LOOP:
 		; Get the keypresses
 		ld		a,%00000100
 		ld		d,%00000110
-		call	START+GET_KEYBOARD_INPUT
+		call	GET_KEYBOARD_INPUT
 
 		; Test for an E
 		EDIT_RULES_READ_LOOP_E:
@@ -163,7 +163,7 @@ EDIT_RULES_READ_LOOP:
 			jr		z,EDIT_RULES_READ_LOOP
 
 			; Jump to the generation loop
-			jp		START+GENERATION_LOOP
+			jp		GENERATION_LOOP
 
 
 
@@ -195,13 +195,13 @@ EDIT_RULES_SHOW_RULES:
 
 		; Assume the rule is dead, and change if proved otherwise.
 		and		a
-		ld		hl,START+EDIT_RULES_TEXT_DEAD
+		ld		hl,EDIT_RULES_TEXT_DEAD
 		jr		z,EDIT_RULES_SHOW_RULES_DEAD
-		ld		hl,START+EDIT_RULES_TEXT_LIVE
+		ld		hl,EDIT_RULES_TEXT_LIVE
 		EDIT_RULES_SHOW_RULES_DEAD:
 
 		; Print the rule
-		call	START+PRINT_STRING
+		call	PRINT_STRING
 
 		; Pop bc, de and hl
 		pop		hl
@@ -232,7 +232,7 @@ EDIT_RULES_TOGGLE_CURSOR:
 	; Color the cursor.
 	ld		a,%11000000
 	ld		b,4
-	call	START+PARTIAL_XOR_ATTRIBUTE_DATA
+	call	PARTIAL_XOR_ATTRIBUTE_DATA
 
 	; Return
 	ret
@@ -246,16 +246,16 @@ EDIT_WORLD
 
 	; Clear the pixel data
     ld		a,0
-    call	START+FILL_PIXEL_DATA
+    call	FILL_PIXEL_DATA
 
 	; Display the world
-    call	START+DISPLAY_WORLD
+    call	DISPLAY_WORLD
 
 ; Initialize the read loop.
 EDIT_WORLD_INIT_LOOP:
 
 	; Toggle the cursor
-	call	START+EDIT_WORLD_TOGGLE_CURSOR
+	call	EDIT_WORLD_TOGGLE_CURSOR
 
 ; Start the read loop
 EDIT_WORLD_READ_LOOP:
@@ -269,7 +269,7 @@ EDIT_WORLD_READ_LOOP:
 		; Get the keypresses
 		ld		a,%01000000
 		ld		d,%00000011
-		call	START+GET_KEYBOARD_INPUT
+		call	GET_KEYBOARD_INPUT
 
 		; Test for enter
 		EDIT_WORLD_READ_LOOP_ENTER:
@@ -277,7 +277,7 @@ EDIT_WORLD_READ_LOOP:
 			jr		z,EDIT_WORLD_READ_LOOP_L
 
 			; Toggle the world aliveness
-			call	START+EDIT_WORLD_TOGGLE_WORLD
+			call	EDIT_WORLD_TOGGLE_WORLD
 
 			; Loop
 			jr		EDIT_WORLD_READ_LOOP
@@ -288,14 +288,14 @@ EDIT_WORLD_READ_LOOP:
 			jr		z,EDIT_WORLD_READ_LOOP_P
 
 			; Toggle the cursor
-			call	START+EDIT_WORLD_TOGGLE_CURSOR
+			call	EDIT_WORLD_TOGGLE_CURSOR
 
 			; Move the cursor down. Remember to wrap and loop.
 			inc		hl
 			inc		(hl)
 			ld		a,(hl)
 			cp		24
-			jp		m,START+EDIT_WORLD_INIT_LOOP
+			jp		m,EDIT_WORLD_INIT_LOOP
 			ld		(hl),0
 			jr		EDIT_WORLD_INIT_LOOP
 
@@ -305,19 +305,19 @@ EDIT_WORLD_READ_LOOP:
 		; Get the keypresses
 		ld		a,%00100000
 		ld		d,%00000001
-		call	START+GET_KEYBOARD_INPUT
+		call	GET_KEYBOARD_INPUT
 
 		; Look for a P
 		and		a
 		jr		z,EDIT_WORLD_READ_LOOP_Z_OR_X
 
 		; Toggle the cursor
-		call	START+EDIT_WORLD_TOGGLE_CURSOR
+		call	EDIT_WORLD_TOGGLE_CURSOR
 
 		; Move the cursor up. Remember to wrap and loop.
 		inc		hl
 		dec		(hl)
-		jp		p,START+EDIT_WORLD_INIT_LOOP
+		jp		p,EDIT_WORLD_INIT_LOOP
 		ld		(hl),23
 		jr		EDIT_WORLD_INIT_LOOP
 
@@ -327,7 +327,7 @@ EDIT_WORLD_READ_LOOP:
 		; Get the keypresses
 		ld		a,%00000001
 		ld		d,%00000110
-		call	START+GET_KEYBOARD_INPUT
+		call	GET_KEYBOARD_INPUT
 
 		; Look for a Z
 		EDIT_WORLD_READ_LOOP_Z
@@ -335,7 +335,7 @@ EDIT_WORLD_READ_LOOP:
 			jr		z,EDIT_WORLD_READ_LOOP_X
 
 			; Toggle the cursor
-            call	START+EDIT_WORLD_TOGGLE_CURSOR
+            call	EDIT_WORLD_TOGGLE_CURSOR
 
 			; Move the cursor left. Remember to wrap.
 			ld		a,(hl)
@@ -352,7 +352,7 @@ EDIT_WORLD_READ_LOOP:
 			jr		z,EDIT_WORLD_READ_LOOP_W_OR_R
 
 			; Toggle the cursor
-			call	START+EDIT_WORLD_TOGGLE_CURSOR
+			call	EDIT_WORLD_TOGGLE_CURSOR
 
 			; Move the cursor right. Remember to wrap.
 			ld		a,(hl)
@@ -369,7 +369,7 @@ EDIT_WORLD_READ_LOOP:
 		; Get the keypresses
 		ld		a,%00000100
 		ld		d,%00001010
-		call	START+GET_KEYBOARD_INPUT
+		call	GET_KEYBOARD_INPUT
 
 		; Test for an R
 		EDIT_WORLD_READ_LOOP_R:
@@ -377,7 +377,7 @@ EDIT_WORLD_READ_LOOP:
 			jr		z,EDIT_WORLD_READ_LOOP_W
 
 			; Jump to rules edit mode
-			jp		START+EDIT_RULES
+			jp		EDIT_RULES
 
 		; Test for a W
 		EDIT_WORLD_READ_LOOP_W:
@@ -393,7 +393,7 @@ EDIT_WORLD_READ_LOOP:
 		; Get the keypresses
 		ld		a,%10000000
 		ld		d,%00011000
-		call	START+GET_KEYBOARD_INPUT
+		call	GET_KEYBOARD_INPUT
 
 		; Test for a B
 		EDIT_WORLD_READ_LOOP_B:
@@ -406,7 +406,7 @@ EDIT_WORLD_READ_LOOP:
 			push	iy
 			pop		ix
 			pop		iy
-			jp		START+EDIT_WORLD
+			jp		EDIT_WORLD
 
 		; Test for an  N
 		EDIT_WORLD_READ_LOOP_N:
@@ -421,10 +421,10 @@ EDIT_WORLD_READ_LOOP:
 
 			; Zero the other world
 			ld		a,0
-			call	START+FILL_WORLD
+			call	FILL_WORLD
 
 			; Jump to the start
-			jp		START+EDIT_WORLD
+			jp		EDIT_WORLD
 
 	; Look for numbers
 	EDIT_WORLD_READ_LOOP_NUMBERS:
@@ -432,11 +432,11 @@ EDIT_WORLD_READ_LOOP:
 		; Get the keypresses
 		ld		a,%00001000
 		ld		d,%00011111
-		call	START+GET_KEYBOARD_INPUT
+		call	GET_KEYBOARD_INPUT
 
 		; If no numbers are being pressed, jump
 		and		a
-		jp		z,START+EDIT_WORLD_READ_LOOP
+		jp		z,EDIT_WORLD_READ_LOOP
 
 		; Else set the world generation to the number being pressed and jump to the generation loop
 		ld		(AUTO_GEN_TIMER),a
@@ -452,7 +452,7 @@ EDIT_WORLD_TOGGLE_CURSOR:
 
 	; Load the cursor and translate it to an attribute location
 	ld		de,(EDIT_WORLD_CURSOR)
-	call	START+GET_ATTRIBUTE_LOCATION
+	call	GET_ATTRIBUTE_LOCATION
 
 	; Load the attribute into the accumulator, set the cursor, then replace the attribute
 	ld		a,(de)
@@ -476,14 +476,14 @@ EDIT_WORLD_TOGGLE_WORLD:
 
 	; Load the cursor and toggle the screen attribute.
 	ld		de,(EDIT_WORLD_CURSOR)
-    call	START+GET_ATTRIBUTE_LOCATION
+    call	GET_ATTRIBUTE_LOCATION
     ld		a,(de)
     xor		%01111111
     ld		(de),a
 
     ; Load the cursor again, and toggle the aliveness in memory.
     ld		de,(EDIT_WORLD_CURSOR)
-    call	START+GET_WORLD_BYTE_LOCATION
+    call	GET_WORLD_BYTE_LOCATION
     xor		(hl)
     ld		(hl),a
 
@@ -500,7 +500,7 @@ GENERATION_LOOP:
 
 	; Clear the pixel data
 	ld		a,0
-	call	START+FILL_PIXEL_DATA
+	call	FILL_PIXEL_DATA
 
 ; Initialize the key read loop.
 ; hl holds the address of the auto gen timer.
@@ -509,7 +509,7 @@ GENERATION_LOOP:
 GENERATION_LOOP_INIT_LOOP:
 
 	; Display the world
-	call	START+DISPLAY_WORLD
+	call	DISPLAY_WORLD
 
 	; Load the timer
 	ld		hl,AUTO_GEN_TIMER
@@ -525,14 +525,14 @@ GENERATION_LOOP_READ_LOOP:
 		; Get the keypresses
 		ld		a,%01000000
 		ld		d,%00000001
-		call	START+GET_KEYBOARD_INPUT
+		call	GET_KEYBOARD_INPUT
 
 		; Test for the key
 		and		a
 		jr		z,GENERATION_LOOP_READ_LOOP_E_R_T
 
 		; Generate the next world and loop
-		call	START+NEXT_GENERATION
+		call	NEXT_GENERATION
 		jr		GENERATION_LOOP_INIT_LOOP
 
 	; Look for an E or R or T key
@@ -541,7 +541,7 @@ GENERATION_LOOP_READ_LOOP:
 		; Get the keypresses
 		ld		a,%00000100
 		ld		d,%00011100
-		call	START+GET_KEYBOARD_INPUT
+		call	GET_KEYBOARD_INPUT
 
 		; Test for an E
 		GENERATION_LOOP_READ_LOOP_E:
@@ -550,7 +550,7 @@ GENERATION_LOOP_READ_LOOP:
 
 			; Reset the timer and jump to editing the world
 			ld		(hl),0
-			jp		START+EDIT_WORLD
+			jp		EDIT_WORLD
 
 		; Test for an R
 		GENERATION_LOOP_READ_LOOP_R:
@@ -559,7 +559,7 @@ GENERATION_LOOP_READ_LOOP:
 
 			; Reset the timer and jump to editing the rules
 			ld		(hl),0
-			jp		START+EDIT_RULES
+			jp		EDIT_RULES
 
 		; Test for a T
 		GENERATION_LOOP_READ_LOOP_T:
@@ -576,7 +576,7 @@ GENERATION_LOOP_READ_LOOP:
 		; Get the keypresses
 		ld		a,%10000000
 		ld		d,%00011000
-		call	START+GET_KEYBOARD_INPUT
+		call	GET_KEYBOARD_INPUT
 
 		; Test for a B
 		GENERATION_LOOP_READ_LOOP_B:
@@ -607,10 +607,10 @@ GENERATION_LOOP_READ_LOOP:
 
 			; Zero the other world
 			ld		a,0
-			call	START+FILL_WORLD
+			call	FILL_WORLD
 
 			; Jump to editing
-			jp		START+EDIT_WORLD
+			jp		EDIT_WORLD
 
 	; Look for numbers
 	GENERATION_LOOP_READ_LOOP_NUMBERS:
@@ -618,7 +618,7 @@ GENERATION_LOOP_READ_LOOP:
 		; Get the keypresses
 		ld		a,%00001000
 		ld		d,%00011111
-		call	START+GET_KEYBOARD_INPUT
+		call	GET_KEYBOARD_INPUT
 
 		; If no numbers are being pressed, jump
 		and		a
@@ -640,11 +640,11 @@ GENERATION_LOOP_READ_LOOP:
 		dec		bc
 		ld		a,b
 		and		a
-		jp		nz,START+GENERATION_LOOP_READ_LOOP
+		jp		nz,GENERATION_LOOP_READ_LOOP
 
 		; Otherwise produce the next generation and return to getting keys
-		call	START+NEXT_GENERATION
-		jp		START+GENERATION_LOOP_INIT_LOOP
+		call	NEXT_GENERATION
+		jp		GENERATION_LOOP_INIT_LOOP
 
 
 

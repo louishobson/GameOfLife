@@ -45,7 +45,7 @@ NEXT_GENERATION:
 	ld		l,0
 
 	; Call accumulation
-	call	START+ACCUM_NEIGHBORS
+	call	ACCUM_NEIGHBORS
 
 	; Reduce ix and iy back to their original values
 	ld		bc,65536-96
@@ -125,7 +125,7 @@ ACCUM_WORLD:
 
 	; We always want to write the back bit to the column accumulator
 	pop		hl
-	call	START+WRITE_WORLD_BIT
+	call	WRITE_WORLD_BIT
 
 	; Pop the middle bit
 	pop		hl
@@ -136,7 +136,7 @@ ACCUM_WORLD:
 	ld		a,b
 	cp		1
 	jr		z,ACCUM_WORLD_NEW_COLUMN
-	jp		p,START+ACCUM_WORLD_SAME_COLUMN
+	jp		p,ACCUM_WORLD_SAME_COLUMN
 
 	; The byte counter is 0, so write the column accumulator to memory and set the byte counter to 8.
     ld		(iy - 1),e
@@ -165,7 +165,7 @@ ACCUM_WORLD:
 		; If we just finished a row, write the centre bit to the column accumulator.
 		; We are now done with this byte, so write it to memory and the screen.
 		; Set the byte counter back to 9, then resume accumulating.
-		call	START+WRITE_WORLD_BIT
+		call	WRITE_WORLD_BIT
         ld		(iy - 1),e
         ld		b,9
 
