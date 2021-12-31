@@ -4,7 +4,7 @@ A cellular automaton simulator for the ZX Spectrum, written in Z80 assembly lang
 
 ## Dependencies:
 
-- ZX BASIC SDK (for zxbasm): The assembler used to build the program: https://zxbasic.readthedocs.io/
+- My fork of ZX BASIC SDK (for zxbasm): The assembler used to build the program: https://github.com/louishobson/zxbasic
 - ZMakeBas: Make tape files from basic code: https://github.com/z00m128/zmakebas/
 - FUSE Emulator Utils (for tape2wav and tapeconv): To interface with TZX files: https://sourceforge.net/projects/fuse-emulator/
 - FUSE Emulator (optional): Emulates the zx spectrum: https://sourceforge.net/projects/fuse-emulator/
