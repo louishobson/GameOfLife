@@ -108,7 +108,7 @@ GET_PIXEL_LOCATION:
 
 	; Load into d and return
 	ld		d,a
-	RET
+	ret
 
 
 
