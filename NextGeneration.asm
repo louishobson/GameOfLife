@@ -27,14 +27,11 @@ NEXT_GENERATION:
 	; Set c, the column counter, to 96, so we can count columns and rows
 	ld 		c,96
 
-	; Set e, the column accumulator, to 0, so we can accumulate the next byte of the new world
-	ld 		e,0
-
 	; Swap the registers
 	exx
 
 	; Load in the top, middle and bottom rows
-	ld		b,(ix - 4)
+	ld      b,0
 	ld		d,(ix + 0)
 	ld		h,(ix + 4)
 
