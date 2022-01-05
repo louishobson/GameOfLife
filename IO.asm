@@ -229,15 +229,13 @@ FILL_PIXEL_DATA:
 	ld		de,PIXEL_DATA
 
 	; Clear the screen. Since there are $1800 bytes to write, we write 256 bytes $18 times.
-	ld		c,PIXEL_DATA_LENGTH_UPPER
-	FILL_PIXEL_DATA_OUTER_LOOP:
-		ld		b,256
-		FILL_PIXEL_DATA_INNER_LOOP:
-			ld		(de),a
-			inc		de
-			djnz	FILL_PIXEL_DATA_INNER_LOOP
-		dec		c
-		jr		nz,FILL_PIXEL_DATA_OUTER_LOOP
+	ld		bc,PIXEL_DATA_LENGTH_UPPER
+	FILL_PIXEL_DATA_LOOP:
+            ld		(de),a
+            inc		de
+            djnz    FILL_PIXEL_DATA_LOOP
+        dec     c
+        jr      nz,FILL_PIXEL_DATA_LOOP
 
 	; Return
 	ret
@@ -254,15 +252,13 @@ FILL_ATTRIBUTE_DATA:
 	ld		de,ATTRIBUTE_DATA
 
 	; Clear the screen. Since there are $0300 bytes to write, we write 256 bytes 3 times.
-	ld		c,ATTRIBUTE_DATA_LENGTH_UPPER
-	FILL_ATTRIBUTE_DATA_OUTER_LOOP:
-		ld		b,256
-		FILL_ATTRIBUTE_DATA_INNER_LOOP:
+	ld		bc,ATTRIBUTE_DATA_LENGTH_UPPER
+	FILL_ATTRIBUTE_DATA_LOOP:
 			ld		(de),a
 			inc		de
-			djnz	FILL_ATTRIBUTE_DATA_INNER_LOOP
+			djnz	FILL_ATTRIBUTE_DATA_LOOP
 		dec		c
-		jr		nz,FILL_ATTRIBUTE_DATA_OUTER_LOOP
+		jr		nz,FILL_ATTRIBUTE_DATA_LOOP
 
 	; Return
 	ret
