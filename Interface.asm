@@ -27,18 +27,6 @@ ENTRY_CODE:
 	ld		ix,WORLD1
 	ld		iy,WORLD2
 
-	; Set the edit rules cursor to 0
-	ld		hl,EDIT_RULES_CURSOR
-	ld		(hl),0
-
-	; Set the edit world cursor to 0
-	ld		hl,0
-	ld		(EDIT_WORLD_CURSOR),hl
-
-	; Set the automatic timer to off
-	ld		hl,AUTO_GEN_TIMER
-	ld		(hl),0
-
 	; Jump to editing rules (automatically)
 
 
