@@ -35,9 +35,9 @@ ENTRY_CODE:
 	ld		hl,0
 	ld		(EDIT_WORLD_CURSOR),hl
 
-    ; Set the automatic timer to off
-    ld		hl,AUTO_GEN_TIMER
-    ld		(hl),0
+	; Set the automatic timer to off
+	ld		hl,AUTO_GEN_TIMER
+	ld		(hl),0
 
 	; Jump to editing rules (automatically)
 
@@ -60,7 +60,7 @@ EDIT_RULES:
 	call	PRINT_STRING
 
 	; Show all rules
-    call	EDIT_RULES_SHOW_RULES
+	call	EDIT_RULES_SHOW_RULES
 
 ; Initialize the read loop.
 ; hl stores the address in memory of the cursor position.
@@ -99,17 +99,17 @@ EDIT_RULES_READ_LOOP:
 			ld		(bc),a
 
 			; Show the rules
-            call	EDIT_RULES_SHOW_RULES
+			call	EDIT_RULES_SHOW_RULES
 
 			; Loop around
 			jr		EDIT_RULES_READ_LOOP
 
 		; Test for L
-        EDIT_RULES_READ_LOOP_L:
-        	bit		1,a
-        	jr		z,EDIT_RULES_READ_LOOP_P
+		EDIT_RULES_READ_LOOP_L:
+			bit		1,a
+			jr		z,EDIT_RULES_READ_LOOP_P
 
-        	; Remove the cursor
+			; Remove the cursor
 			call	EDIT_RULES_TOGGLE_CURSOR
 
 			; Increment the cursor. If it exceeded 18, set it to 0
@@ -191,7 +191,7 @@ EDIT_RULES_SHOW_RULES:
 		push	hl
 
 		; Load the rule into a
-        ld		a,(hl)
+		ld		a,(hl)
 
 		; Assume the rule is dead, and change if proved otherwise.
 		and		a
@@ -245,11 +245,11 @@ EDIT_RULES_TOGGLE_CURSOR:
 EDIT_WORLD
 
 	; Clear the pixel data
-    ld		a,0
-    call	FILL_PIXEL_DATA
+	ld		a,0
+	call	FILL_PIXEL_DATA
 
 	; Display the world
-    call	DISPLAY_WORLD
+	call	DISPLAY_WORLD
 
 ; Initialize the read loop.
 EDIT_WORLD_INIT_LOOP:
@@ -261,7 +261,7 @@ EDIT_WORLD_INIT_LOOP:
 EDIT_WORLD_READ_LOOP:
 
 	; Load the cursor location into hl
-    ld		hl,EDIT_WORLD_CURSOR
+	ld		hl,EDIT_WORLD_CURSOR
 
 	; Look for an enter or L key
 	EDIT_WORLD_READ_LOOP_ENTER_OR_L:
@@ -335,7 +335,7 @@ EDIT_WORLD_READ_LOOP:
 			jr		z,EDIT_WORLD_READ_LOOP_X
 
 			; Toggle the cursor
-            call	EDIT_WORLD_TOGGLE_CURSOR
+			call	EDIT_WORLD_TOGGLE_CURSOR
 
 			; Move the cursor left. Remember to wrap.
 			ld		a,(hl)
@@ -476,19 +476,19 @@ EDIT_WORLD_TOGGLE_WORLD:
 
 	; Load the cursor and toggle the screen attribute.
 	ld		de,(EDIT_WORLD_CURSOR)
-    call	GET_ATTRIBUTE_LOCATION
-    ld		a,(de)
-    xor		%01111111
-    ld		(de),a
+	call	GET_ATTRIBUTE_LOCATION
+	ld		a,(de)
+	xor		%01111111
+	ld		(de),a
 
-    ; Load the cursor again, and toggle the aliveness in memory.
-    ld		de,(EDIT_WORLD_CURSOR)
-    call	GET_WORLD_BYTE_LOCATION
-    xor		(hl)
-    ld		(hl),a
+	; Load the cursor again, and toggle the aliveness in memory.
+	ld		de,(EDIT_WORLD_CURSOR)
+	call	GET_WORLD_BYTE_LOCATION
+	xor		(hl)
+	ld		(hl),a
 
-    ; Return
-    ret
+	; Return
+	ret
 
 
 

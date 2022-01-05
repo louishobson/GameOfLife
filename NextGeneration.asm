@@ -89,7 +89,7 @@ ACCUM_NEIGHBORS:
 		inc		c
 		inc		l
 
-		; Increase e by 9 if it is alive
+		; The current cell is alive, so increase the centre accumulator by 9 to mark this
 		ld		a,e
 		add		a,9
 		ld		e,a
@@ -139,8 +139,8 @@ ACCUM_WORLD:
 	jp		p,ACCUM_WORLD_SAME_COLUMN
 
 	; The byte counter is 0, so write the column accumulator to memory and set the byte counter to 8.
-    ld		(iy - 1),e
-    ld		b,8
+	ld		(iy - 1),e
+	ld		b,8
 
 	; We are still working on the current column
 	ACCUM_WORLD_SAME_COLUMN:
@@ -166,8 +166,8 @@ ACCUM_WORLD:
 		; We are now done with this byte, so write it to memory and the screen.
 		; Set the byte counter back to 9, then resume accumulating.
 		call	WRITE_WORLD_BIT
-        ld		(iy - 1),e
-        ld		b,9
+		ld		(iy - 1),e
+		ld		b,9
 
 		; If this is the end of the last row, return
 		ld		a,c
@@ -178,7 +178,7 @@ ACCUM_WORLD:
 	ACCUM_WORLD_LOAD_NEXT_COLUMN:
 
 		; Swap to accum registers
-        exx
+		exx
 
 		; Update the top, middle and bottom bytes
 		ld		b,(ix - 4)

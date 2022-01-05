@@ -38,7 +38,7 @@ GET_WORLD_BYTE_LOCATION:
 	ld		d,a
 
 	; Shift X right and or it with the Ys and we are done.
-    ; Copy the result into l.
+	; Copy the result into l.
 	ld		a,e
 	and		%11111000
 	rrca
@@ -94,7 +94,7 @@ DISPLAY_WORLD:
 	halt
 
 	; Set hl to the position of the first screen attribute
-    ld		hl,ATTRIBUTE_DATA
+	ld		hl,ATTRIBUTE_DATA
 
 	; Loop through all bytes to display the world.
 	; Set b to count through the bytes.
