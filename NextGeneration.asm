@@ -62,6 +62,12 @@ NEXT_GENERATION:
 
 
 
+; Swap registers then accumulate.
+EXX_THEN_ACCUM_NEIGHBORS:
+
+    ; Swap registers
+    exx
+
 ; This part of the program accumulates neighbors.
 ACCUM_NEIGHBORS:
 
@@ -133,18 +139,16 @@ ACCUM_WORLD:
 	ld		a,b
 	cp		1
 	jr		z,ACCUM_WORLD_NEW_COLUMN
-	jp		p,ACCUM_WORLD_SAME_COLUMN
+	jr		nc,EXX_THEN_ACCUM_NEIGHBORS
 
-	; The byte counter is 0, so write the column accumulator to memory and set the byte counter to 8.
-	ld		(iy - 1),e
-	ld		b,8
+    ; We just finished the first cell of a new column, so need to write the column accumulator to memory.
+    ACCUM_WORLD_WRITE_BYTE:
 
-	; We are still working on the current column
-	ACCUM_WORLD_SAME_COLUMN:
-
-		; Swap to accum registers and return to accumulating
-		exx
-		jr		ACCUM_NEIGHBORS
+        ; The byte counter is 0, so write the column accumulator to memory and set the byte counter to 8.
+        ; Then continue accumulating.
+        ld		(iy - 1),e
+        ld		b,8
+        jr      EXX_THEN_ACCUM_NEIGHBORS
 
 	; We have entered a new column
 	ACCUM_WORLD_NEW_COLUMN:
