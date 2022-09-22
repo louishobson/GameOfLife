@@ -127,8 +127,8 @@ Controls:
 
 ### The Edit Rules Menu:
 
-[Edit Rules Menu](screenshots/Edit%20Ruleset%20Menu.png)
+![Edit Rules Menu](screenshots/Edit Ruleset Menu.png)
 
 ### High-Speed Generations:
 
-[Generation Gif](screenshots/Generations.gif)
+![Generation Gif](screenshots/Generations.gif)
