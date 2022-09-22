@@ -127,7 +127,7 @@ Controls:
 
 ### The Edit Rules Menu:
 
-![Edit Rules Menu](screenshots/Edit Ruleset Menu.png)
+![Edit Rules Menu](screenshots/Edit%20Ruleset%20Menu.png)
 
 ### High-Speed Generations:
 
