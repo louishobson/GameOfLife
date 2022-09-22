@@ -129,9 +129,7 @@ ACCUM_WORLD:
 	; We always want to write the back bit to the column accumulator
 	pop		hl
 	call	WRITE_WORLD_BIT
-
-	; Pop the middle bit
-	pop		hl
+    pop		hl
 
 	; If the byte counter is now 1, then we have finished the column.
 	; Otherwise we need to continue with this column.
@@ -164,8 +162,8 @@ ACCUM_WORLD:
 		jr		nz,ACCUM_WORLD_LOAD_NEXT_COLUMN
 
 		; If we just finished a row, write the centre bit to the column accumulator.
-		; We are now done with this byte, so write it to memory and the screen.
-		; Set the byte counter back to 9, then resume accumulating.
+		; We are now done with this byte, so write it to memory.
+		; Set the byte counter back to 9.
 		call	WRITE_WORLD_BIT
 		ld		(iy - 1),e
 		ld		b,9
