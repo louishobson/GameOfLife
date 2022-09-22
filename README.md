@@ -2,12 +2,16 @@
 
 A cellular automaton simulator for the ZX Spectrum, written in Z80 assembly language.
 
-## Dependencies:
+## Build Dependencies:
 
 - My fork of ZX BASIC SDK (for zxbasm): The assembler used to build the program: https://github.com/louishobson/zxbasic
 - ZMakeBas: Make tape files from basic code: https://github.com/z00m128/zmakebas/
 - FUSE Emulator Utils (for tape2wav and tapeconv): To interface with TZX files: https://sourceforge.net/projects/fuse-emulator/
-- FUSE Emulator (optional): Emulates the zx spectrum: https://sourceforge.net/projects/fuse-emulator/
+
+## Runtime Dependencies:
+
+- FUSE Emulator: Emulates the zx spectrum: https://sourceforge.net/projects/fuse-emulator/
+- ...Or a real ZX Spectrum and tape player!
 
 ## Build:
 
@@ -36,12 +40,30 @@ To clean all build files:
 make clean
 ```
 
+## Prebuilt Tapes:
+
+Prebuilt `.tzx` tapes can be found in the `tzx/` directory, and their `.wav` equivalents are found in `wav/`.
+
 ## How to use:
 
 See the Wikipedia page on cellular automatons for an explanation of the principals: https://en.wikipedia.org/wiki/Cellular_automaton.
 In particular, this implementation uses the Moore neighbourhood: https://en.wikipedia.org/wiki/Moore_neighborhood.
 
-The program self-runs by running `LOAD ""` on the spectrum, then starting the tape. There are three menus, and the edit rules menu opens on execution.
+The program self-runs by running `LOAD ""` on the spectrum, then starting the tape.
+
+If using the FUSE Emulator, call:
+```
+make run
+```
+
+which invokes:
+```
+fuse --no-sound tzx/GameOfLife.tzx
+```
+
+Alternatively, open FUSE and navigate to `File > Open`, then select the `.tzx` `.tzx` file manually.
+
+There are three menus, and the edit rules menu opens on execution:
 
 ### Edit Rules Menu:
 
@@ -101,3 +123,12 @@ Controls:
 - **B**: Flip the buffers.
 - **N**: Flip the buffers and start a new, empty world in world edit mode.
 
+## Screenshots:
+
+### The Edit Rules Menu:
+
+[Edit Rules Menu](screenshots/Edit%20Ruleset%20Menu.png)
+
+### High-Speed Generations:
+
+[Generation Gif](screenshots/Generations.gif)
