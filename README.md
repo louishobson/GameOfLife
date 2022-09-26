@@ -61,7 +61,7 @@ which invokes:
 fuse --no-sound tzx/GameOfLife.tzx
 ```
 
-Alternatively, open FUSE and navigate to `File > Open`, then select the `.tzx` `.tzx` file manually.
+Alternatively, open FUSE and navigate to `File > Open`, then select the `.tzx` file manually.
 
 There are three menus, and the edit rules menu opens on execution:
 
