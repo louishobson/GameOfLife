@@ -129,6 +129,6 @@ Controls:
 
 ![Edit Rules Menu](screenshots/Edit%20Ruleset%20Menu.png)
 
-### High-Speed Generations:
+### Running the Automaton:
 
 ![Generation Gif](screenshots/Generations.gif)
